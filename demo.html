@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Backlot demo</title>
+
+    <style type="text/css">
+      body{
+        background-color: #050505;
+        color: #BEBEBE;
+        font-family: arial, sans-serif;
+        max-width: 1280px;
+        margin: 0px auto;
+        padding: 1em;
+      }
+      #fps_meter{
+        position: absolute;
+        bottom: 1.2em;
+        left: 1.1em;
+        width: 200px;
+        margin: 0px auto;
+        min-height: 3em;
+      }
+      #game_canvas{
+        border: 1px solid #333;
+        background-color: #000;
+        cursor: none;
+        display: block;
+        margin: 0px auto;
+      }
+      #container{
+        width: 1280px;
+        margin: 0px auto;
+        position: relative;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container">
+      <div id="fps_meter"></div>
+      <div id="game">
+        <canvas id="game_canvas" width="1280" height="720"></canvas>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="src/util.js"></script>
+    <script type="text/javascript" src="src/meter.js"></script>
+    <script type="text/javascript" src="src/cursor.js"></script>
+    <script type="text/javascript" src="src/viewport.js"></script>
+    <script type="text/javascript" src="src/engine.js"></script>
+    <script type="text/javascript" src="src/world/layer.js"></script>
+    <script type="text/javascript" src="src/world.js"></script>
+    <script type="text/javascript" src="src/asset_depot.js"></script>
+    <script type="text/javascript" src="src/entity.js"></script>
+    <script type="text/javascript" src="src/entities/sprite.js"></script>
+    <script type="text/javascript" src="src/game.js"></script>
+
+    <script type="text/javascript">
+      const game = Game.create("game_canvas");
+      game.add_fps_meter("fps_meter");
+
+      game.set_scene({
+        world: World.create(1280, 720),
+
+        setup: () => {
+          game.add_image("turret.png");
+          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]));
+          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]));
+          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]));
+
+          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]), 80);
+          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]), 80);
+          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]), 80);
+
+          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]), 60);
+          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]), 60);
+          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]), 60);
+
+          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]), 40);
+          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]), 40);
+          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]), 40);
+        },
+
+        update: dt => {
+          const world_coords = [
+            game.engine.viewport.width/2 - game.engine.cursor.x,
+            game.engine.viewport.height/2 - game.engine.cursor.y
+          ];
+          game.engine.viewport.center_on(world_coords[0], world_coords[1]);
+        }
+      });
+
+      game.run();
+    </script>
+
+  </body>
+</html>
