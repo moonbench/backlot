@@ -1,36 +1,31 @@
 "use strict";
 
-const Game = (() => {
-  function set_scene(game, scene){
-    game.scene = scene;
-    game.engine.set_world(scene.world);
-    game.add_player_entity = game.engine.world.add_player_entity;
-    game.add_entity = game.engine.world.add_entity;
-    if(scene.setup) scene.setup();
-    if(scene.update) game.engine.update_function = scene.update;
+class Game {
+  constructor(canvas_id){
+    this.engine = new Engine(document.getElementById(canvas_id));
+    this.asset_depot = new AssetDepot();
   }
 
-  function set_fps_meter(game, meter_id){
-    game.engine.fps_meter = Meter.create(game.engine, meter_id);
+  set_scene(scene){
+    this.scene = scene;
+    scene.add_image = this.asset_depot.add_image;
+    scene.add_audio = this.asset_depot.add_audio;
+    scene.images = this.asset_depot.images;
+    scene.audio = this.asset_depot.audio;
+
+    this.engine.set_world(scene.world);
+    scene.add_player_entity = this.engine.world.add_player_entity;
+    scene.add_entity = this.engine.world.add_entity;
+
+    if(scene.setup) scene.setup(scene);
+    if(scene.update) this.engine.update_function = (dt) => scene.update(scene, dt, this);
   }
 
-  return {
-    create: canvas_id => {
-      const game = {
-        engine: Engine.create(document.getElementById(canvas_id)),
-        asset_depot: AssetDepot.create(),
-      };
-
-      game.set_scene = scene => set_scene(game, scene);
-      game.add_fps_meter = meter_id => set_fps_meter(game, meter_id);
-      game.add_image = game.asset_depot.add_image;
-      game.add_audio = game.asset_depot.add_audio;
-      game.images = game.asset_depot.images;
-      game.audio = game.asset_depot.audio;
-
-      game.run = game.engine.run;
-
-      return game;
-    }
+  set_fps_meter(meter_id){
+    this.engine.fps_meter = new Meter(this.engine, meter_id);
   }
-})();
+
+  run(){
+    this.engine.run();
+  }
+}

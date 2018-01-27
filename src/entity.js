@@ -1,15 +1,89 @@
 "use strict";
 
-const Entity = (() => {
+class Entity {
+  constructor(x = 0, y = 0, width = 0, height = 0, angle = 0, mass = 1){
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.angle = angle;
+    this.mass = mass;
+    this.dead = false;
 
-  /*
-  * Rendering
-  */
-  function render_box_outline(entity, ctx, dt){
-    ctx.lineWidth = 1;
-    ctx.strokeRect(-entity.height/2, -entity.width/2, entity.height, entity.width);
+    this.normalize();
   }
-  function render_crosshair(entity, ctx, dt){
+
+  reset(){}
+
+  update(){
+    this.reset();
+  }
+
+  normalize(){
+    this.mass = this.mass < 0.00001 ? 0.00001 : this.mass;
+    this.angle = Util.normalize_angle(this.angle);
+    this.max_radius = Math.sqrt( Math.pow(this.width/2,2) + Math.pow(this.height/2,2));
+    this.calculate_corners();
+    this.calculate_limits();
+    this.set_edges();
+  }
+
+  calculate_corners(){
+    this.corners = {};
+    this.corners.top = [Math.sin(this.angle)*this.width/2, -Math.cos(this.angle)*this.width/2];
+    this.corners.right = [Math.cos(this.angle)*this.height/2, Math.sin(this.angle)*this.height/2];
+    this.corners.bottom = [-this.corners.top[0], -this.corners.top[1]];
+    this.corners.left = [-this.corners.right[0], -this.corners.right[1]];
+    this.corners.top_right = [this.corners.top[0]+this.corners.right[0], this.corners.top[1]+this.corners.right[1]];
+    this.corners.bottom_right = [this.corners.bottom[0]+this.corners.right[0], this.corners.bottom[1]+this.corners.right[1]];
+    this.corners.top_left = [-this.corners.bottom_right[0], -this.corners.bottom_right[1]];
+    this.corners.bottom_left = [-this.corners.top_right[0], -this.corners.top_right[1]];
+  }
+
+  calculate_limits(){    
+    this.max = {};
+    this.max.x = Math.max(Math.abs(this.corners.top_right[0]), Math.abs(this.corners.top_left[0]));
+    this.max.y = Math.max(Math.abs(this.corners.top_right[1]), Math.abs(this.corners.bottom_right[1]));
+    this.min = {};
+    this.min.x = -this.max.x;
+    this.min.y = -this.max.y;
+  }
+
+  set_edges(){
+    this.edges = [];
+    this.edges.push([this.corners.top_left, this.corners.top_right]);
+    this.edges.push([this.corners.top_right, this.corners.bottom_right]);
+    this.edges.push([this.corners.bottom_right, this.corners.bottom_left]);
+    this.edges.push([this.corners.bottom_left, this.corners.top_left]);
+    return this;
+  }
+
+  pre_render(viewport, ctx, dt){
+    ctx.save();
+    const canvas_coords = viewport.world_to_viewport(this.x, this.y, this.layer.depth);
+    ctx.translate(canvas_coords[0], canvas_coords[1]);
+    ctx.rotate(this.angle);
+  }
+
+  post_render(ctx, dt){
+    if(this.debug_level > 0){
+      ctx.rotate(0-this.angle);
+      this.render_debug(ctx, dt);
+    }
+    ctx.restore();
+  }
+
+  render(ctx, dt){
+    if(this.debug_level<1) return;
+    this.render_box_outline(ctx, dt);
+  }
+
+  render_box_outline(ctx, dt){
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-this.height/2, -this.width/2, this.height, this.width);
+  }
+
+  render_crosshair(ctx, dt){
     ctx.beginPath();
     ctx.moveTo(-3, 0);
     ctx.lineTo(3, 0);
@@ -17,142 +91,55 @@ const Entity = (() => {
     ctx.lineTo(0, 3);
     ctx.stroke();
   }
-  function render_info_text(entity, ctx, dt){
-    ctx.strokeText("[x:" + Math.round(entity.x) + ", y:" + Math.round(entity.y) + ", t:" + entity.angle.toFixed(2) + "]", 3 + (entity.width/2), -3 - (entity.height/2) );
-    ctx.strokeText("width:" + Math.round(entity.width) + ", height:" + Math.round(entity.height), 3 + (entity.width/2), 10 - (entity.height/2) );
+
+  render_info_text(ctx, dt){
+    ctx.strokeText("[x:" + Math.round(this.x) + ", y:" + Math.round(this.y) + ", t:" + this.angle.toFixed(2) + "]", 3 + (this.width/2), -3 - (this.height/2) );
+    ctx.strokeText("width:" + Math.round(this.width) + ", height:" + Math.round(this.height), 3 + (this.width/2), 10 - (this.height/2) );
   }
-  function render_corners(entity, ctx, dt){
-    Object.keys(entity.corners).forEach(function(corner){
-      ctx.strokeRect(entity.corners[corner][0]-3, entity.corners[corner][1]-3, 6, 6);
+
+  render_corners(ctx, dt){
+    Object.keys(this.corners).forEach(function(corner){
+      ctx.strokeRect(this.corners[corner][0]-3, this.corners[corner][1]-3, 6, 6);
     });
   }
-  function render_edges(entity, ctx, dt){
+
+  render_edges(ctx, dt){
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
-    entity.edges.forEach(function(edge){
+    this.edges.forEach(function(edge){
       ctx.moveTo(edge[0][0], edge[0][1]);
       ctx.lineTo(edge[1][0], edge[1][1]);
     });
     ctx.stroke();
     ctx.setLineDash([]);
   }
-  function render_alignment_vector(entity, ctx, dt){
+
+  render_alignment_vector(ctx, dt){
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(entity.corners.right[0], entity.corners.right[1]);
+    ctx.lineTo(this.corners.right[0], this.corners.right[1]);
     ctx.stroke();
   }
 
-  function render_debug(entity, ctx, dt){
+  render_debug(ctx, dt){
     ctx.strokeStyle = "#308311";
     ctx.lineWidth = 1;
-    render_crosshair(entity, ctx, dt);
-    render_alignment_vector(entity, ctx, dt);
+    this.render_crosshair(ctx, dt);
+    this.render_alignment_vector(ctx, dt);
 
     if(entity.debug_level < 2) return;
-    render_edges(entity, ctx, dt);
+    this.render_edges(ctx, dt);
 
     if(entity.debug_level < 3) return;
-    render_corners(entity, ctx, dt);
+    this.render_corners(ctx, dt);
 
     if(entity.debug_level < 4) return;
-    render_info_text(entity, ctx, dt);
-  }
-  function pre_render(entity, viewport, ctx, dt){
-    ctx.save();
-    const canvas_coords = viewport.world_to_viewport(entity.x, entity.y, entity.layer.depth);
-    ctx.translate(canvas_coords[0], canvas_coords[1]);
-    ctx.rotate(entity.angle);
-  }
-  function post_render(entity, ctx, dt){
-    if(entity.debug_level > 0){
-      ctx.rotate(0-entity.angle);
-      entity.render_debug(ctx, dt);
-    }
-    ctx.restore();
-  }
-  function render(entity, ctx, dt){
-    if(entity.debug_level<1) return;
-    render_box_outline(entity, ctx, dt);
-  };
-
-
-  /*
-  * Massaging
-  */
-  function calculate_limits(entity){
-    entity.max = {};
-    entity.max.x = Math.max(Math.abs(entity.corners.top_right[0]), Math.abs(entity.corners.top_left[0]));
-    entity.max.y = Math.max(Math.abs(entity.corners.top_right[1]), Math.abs(entity.corners.bottom_right[1]));
-    entity.min = {};
-    entity.min.x = -entity.max.x;
-    entity.min.y = -entity.max.y;
-  }
-  function calculate_corners(entity){
-    entity.corners = {};
-    entity.corners.top = [Math.sin(entity.angle)*entity.width/2, -Math.cos(entity.angle)*entity.width/2];
-    entity.corners.right = [Math.cos(entity.angle)*entity.height/2, Math.sin(entity.angle)*entity.height/2];
-    entity.corners.bottom = [-entity.corners.top[0], -entity.corners.top[1]];
-    entity.corners.left = [-entity.corners.right[0], -entity.corners.right[1]];
-    entity.corners.top_right = [entity.corners.top[0]+entity.corners.right[0], entity.corners.top[1]+entity.corners.right[1]];
-    entity.corners.bottom_right = [entity.corners.bottom[0]+entity.corners.right[0], entity.corners.bottom[1]+entity.corners.right[1]];
-    entity.corners.top_left = [-entity.corners.bottom_right[0], -entity.corners.bottom_right[1]];
-    entity.corners.bottom_left = [-entity.corners.top_right[0], -entity.corners.top_right[1]];
-    return entity;
-  }
-  function set_edges(entity){
-    entity.edges = [];
-    entity.edges.push([entity.corners.top_left, entity.corners.top_right]);
-    entity.edges.push([entity.corners.top_right, entity.corners.bottom_right]);
-    entity.edges.push([entity.corners.bottom_right, entity.corners.bottom_left]);
-    entity.edges.push([entity.corners.bottom_left, entity.corners.top_left]);
-    return entity;
+    this.render_info_text(ctx, dt);
   }
 
-  function normalize(entity){
-    entity.mass = entity.mass < 0.00001 ? 0.00001 : entity.mass;
-    entity.angle = Util.normalize_angle(entity.angle);
-    entity.max_radius = Math.sqrt( Math.pow(entity.width/2,2) + Math.pow(entity.height/2,2));
-    calculate_corners(entity);
-    calculate_limits(entity);
-    set_edges(entity);
+  create_location_key(){
+    return this.x.toFixed(3) + "." + this.y.toFixed(3) +
+      "." + this.angle.toFixed(3) +
+      "." + this.width + "." + this.height;
   }
-
-  function create_location_key(entity){
-    return entity.x.toFixed(3) + "." + entity.y.toFixed(3) +
-      "." + entity.angle.toFixed(3) +
-      "." + entity.width + "." + entity.height;
-  }
-
-  /*
-  * Public methods
-  */
-  return {
-    create: (x = null, y = null, width = 0, height = 0, angle = 0, mass = 1) => {
-      const entity = {
-        x,
-        y,
-        width,
-        height,
-        angle,
-        mass,
-        dead: false,
-        debug_level: 3,
-      };
-      normalize(entity);
-
-      entity.reset = () => {};
-      entity.normalize = () => normalize(entity);
-      entity.update = () => entity.reset();
-
-      entity.pre_render = (viewport, ctx, dt) => pre_render(entity, viewport, ctx, dt);
-      entity.render = (ctx, dt) => render(entity, ctx, dt);
-      entity.post_render = (ctx, dt) => post_render(entity, ctx, dt);
-      entity.render_debug = (ctx, dt) => render_debug(entity, ctx, dt);
-
-      entity.current_key = () => create_location_key(entity);
-
-      return entity;
-    }
-  }
-})();
+}

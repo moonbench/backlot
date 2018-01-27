@@ -1,33 +1,23 @@
 "use strict";
 
-const AssetDepot = (() => {
+const ASSET_DIR = "assets";
+class AssetDepot {
 
-  const ASSET_DIR = "assets";
-
-  function add_image(depot, src){
-    depot.images[src] = document.createElement("img");
-    depot.images[src].src = ASSET_DIR + "/" + src;
-    return depot.images[src];
+  constructor(){
+    this.images = {};
+    this.audio = {};
   }
 
-  function add_audio(depot, src){
-    depot.audio[src] = document.createElement("audio");
-    depot.audio[src].src = ASSET_DIR + "/" + src;
-    depot.audio[src].volume = 0.25;
-    return depot.audio[src];
+  add_image(src){
+    this.images[src] = document.createElement("img");
+    this.images[src].src = ASSET_DIR + "/" + src;
+    return this.images[src];
   }
 
-  return {
-    create: () => {
-      var depot = {
-        images: {},
-        audio: {},
-      };
-
-      depot.add_image = src => add_image(depot, src);
-      depot.add_audio = src => add_audio(depot, src);
-
-      return depot;
-    }
+  add_audio(src){
+    this.audio[src] = document.createElement("audio");
+    this.audio[src].src = ASSET_DIR + "/" + src;
+    this.audio[src].volume = 0.25;
+    return this.audio[src];
   }
-})();
+}

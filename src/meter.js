@@ -1,39 +1,35 @@
 "use strict";
 
-const Meter = (() => {
-  return {
-    create: (engine, div_id ) => {
-      const meter = new FPSMeter(document.getElementById(div_id), {
-        interval:  1/engine.fps,
-        smoothing: 10,
-        show:      'fps',
-        toggleOn:  'click',
-        decimals:  0,
-        maxFps:    engine.fps,
-        threshold: engine.step*10,
+class Meter {
+  constructor(engine, div_id){
+    return new FPSMeter(document.getElementById(div_id), {
+      interval:  1/engine.fps,
+      smoothing: 10,
+      show:      'fps',
+      toggleOn:  'click',
+      decimals:  0,
+      maxFps:    engine.fps,
+      threshold: engine.step*10,
 
-        // Meter position
-        position: 'absolute',
-        zIndex:   10,
-        left:     '5px',
-        top:      '5px',
-        right:    '5px',
-        bottom:   '5px',
-        margin:   '0 0 0 0',
+      // Meter position
+      position: 'absolute',
+      zIndex:   10,
+      left:     '5px',
+      top:      '5px',
+      right:    '5px',
+      bottom:   '5px',
+      margin:   '0 0 0 0',
 
-        // Theme
-        theme: 'dark',
-        heat:  1,
+      // Theme
+      theme: 'dark',
+      heat:  1,
 
-        // Graph
-        graph:   1,
-        history: 20,
-      });
-
-      return meter;
-    }
+      // Graph
+      graph:   1,
+      history: 20,
+    });
   }
-})();
+}
 
 /*! FPSMeter 0.3.1 - 9th May 2013 | https://github.com/Darsain/fpsmeter */
 (function(m,j){function s(a,e){for(var g in e)try{a.style[g]=e[g]}catch(j){}return a}function H(a){return null==a?String(a):"object"===typeof a||"function"===typeof a?Object.prototype.toString.call(a).match(/\s([a-z]+)/i)[1].toLowerCase()||"object":typeof a}function R(a,e){if("array"!==H(e))return-1;if(e.indexOf)return e.indexOf(a);for(var g=0,j=e.length;g<j;g++)if(e[g]===a)return g;return-1}function I(){var a=arguments,e;for(e in a[1])if(a[1].hasOwnProperty(e))switch(H(a[1][e])){case "object":a[0][e]=
