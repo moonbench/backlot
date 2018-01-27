@@ -1,126 +1,95 @@
 "use strict";
 
-const Engine = (() => {
+class Engine {
+  constructor(canvas){
+    this.slow = 1;
+    this.now = null;
+    this.remainder = 0;
+    this.last = Util.current_time_in_ms();
 
-  function current_time_in_ms(){
-    return window.performance && window.performance.now ? window.performance.now() : new Date().getTime();
+    this.set_canvas(canvas);
+    this.bind_mouse();
+    this.set_fps(30);
+    this.set_cursor(new Cursor(canvas.width/2, canvas.height/2, this.canvas));
+    this.set_scale(1);
   }
 
-  function set_fps(engine, fps){
-    engine.fps = fps;
-    engine.step = 1/engine.fps;
-    engine.slowstep = engine.slow * engine.step;
+  run(){
+    requestAnimationFrame(() => this.draw_frame());
   }
 
-  function set_canvas(engine, canvas){
-    engine.canvas = canvas;
-    engine.ctx = engine.canvas.getContext("2d");
-    engine.viewport = Viewport.create(engine.canvas.width, engine.canvas.height);
+  bind_mouse(){
+    this.canvas.addEventListener("mousemove", (event) => {
+      if(this.cursor) this.cursor.handle_mouse_move(event);
+      if(this.handle_mouse_move) this.handle_mouse_move(event)
+    });
+    this.canvas.addEventListener("mousedown", (event) => {
+      if(this.handle_mouse_button) this.handle_mouse_button(event, true)
+    });
+    this.canvas.addEventListener("mouseup", (event) => {
+      if(this.handle_mouse_button) this.handle_mouse_button(event, false)
+    });
   }
 
-  function set_world(engine, world){
-    engine.world = world;
-    world.engine = engine;
+  set_canvas(canvas){
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
+    this.viewport = new Viewport(this.canvas.width, this.canvas.height);
   }
 
-
-  function update(engine, dt){
-    if(engine.world) engine.world.update(dt);
-    if(engine.update_function) engine.update_function(dt);
-  }
-  function render(engine){
-    if(engine.viewport) engine.viewport.clear(engine.ctx);
-
-    engine.ctx.save();
-    engine.ctx.scale(engine.scale, engine.scale);
-    if(engine.world) engine.world.render(engine.ctx);
-    engine.ctx.restore();
-
-    if(engine.cursor) engine.cursor.render(engine.ctx);
-
-    if(engine.viewport) engine.viewport.draw_border(engine.ctx);
+  set_fps(fps){
+    this.fps = fps;
+    this.step = 1/this.fps;
+    this.slowstep = this.slow * this.step;
   }
 
-  function draw_frame(engine){
-    engine.now = current_time_in_ms();
+  set_world(world){
+    this.world = world;
+    world.engine = this;
+  }
 
-    engine.remainder += Math.min(1, (engine.now - engine.last)/1000);
-    if(engine.remainder >= engine.slowstep){
-      if(engine.fps_meter) engine.fps_meter.tickStart();
-      while(engine.remainder >= engine.slowstep){
-        engine.remainder -= engine.slowstep;
-        update(engine, engine.step);
+  set_cursor(cursor){
+    this.cursor = cursor;
+    cursor.viewport = this.viewport;
+  }
+
+  set_scale(scale){
+    this.scale = scale;
+    this.viewport.scale = scale;
+  }
+
+  update(dt){
+    if(this.world) this.world.update(dt);
+    if(this.update_function) this.update_function(dt);
+  }
+
+  render(){
+    if(this.viewport) this.viewport.clear(this.ctx);
+
+    this.ctx.save();
+    this.ctx.scale(this.scale, this.scale);
+    if(this.world) this.world.render(this.ctx);
+    this.ctx.restore();
+
+    if(this.cursor) this.cursor.render(this.ctx);
+
+    if(this.viewport) this.viewport.render_border(this.ctx);
+  }
+
+  draw_frame(){
+    this.now = Util.current_time_in_ms();
+
+    this.remainder += Math.min(1, (this.now - this.last)/1000);
+    if(this.remainder >= this.slowstep){
+      if(this.fps_meter) this.fps_meter.tickStart();
+      while(this.remainder >= this.slowstep){
+        this.remainder -= this.slowstep;
+        this.update(this.step);
       }
-      render(engine, engine.remainder/engine.slow);
-      if(engine.fps_meter) engine.fps_meter.tick();
+      this.render();
+      if(this.fps_meter) this.fps_meter.tick();
     }
-    engine.last = engine.now;
-    requestAnimationFrame(function(){
-      draw_frame(engine);
-    });
+    this.last = this.now;
+    requestAnimationFrame(() => this.draw_frame());
   }
-
-  function set_cursor(engine, cursor){
-    engine.cursor = cursor;
-    cursor.viewport = engine.viewport;
-  }
-
-  function bind_mouse(engine){
-    engine.canvas.addEventListener("mousemove", function(event){
-      if(engine.cursor) engine.cursor.handle_mouse_move(event);
-      if(engine.handle_mouse_move) engine.handle_mouse_move(event)
-    });
-    engine.canvas.addEventListener("mousedown", function(event){
-      if(engine.handle_mouse_button) engine.handle_mouse_button(event, true)
-    });
-    engine.canvas.addEventListener("mouseup", function(event){
-      if(engine.handle_mouse_button) engine.handle_mouse_button(event, false)
-    });
-  }
-
-  function set_scale(engine, scale){
-    engine.scale = scale;
-    engine.viewport.scale = scale;
-  }
-
-  return {
-    create: canvas => {
-      const engine = {
-        canvas,
-
-        fps: 30,
-        slow: 1,
-        now: null,
-        remainder: 0,
-        last: current_time_in_ms(),
-
-        scale: 1,
-      };
-
-      bind_mouse(engine);
-
-      engine.set_canvas = canvas => set_canvas(engine, canvas);
-      engine.set_canvas(engine.canvas);
-
-      engine.set_fps = fps => set_fps(engine, fps);
-      engine.set_fps(engine.fps);
-
-      engine.set_cursor = cursor => set_cursor(engine, cursor);
-      engine.set_cursor(Cursor.create(0, 0, engine.canvas));
-
-      engine.set_scale = scale => set_scale(engine, scale);
-      engine.set_scale(engine.scale);
-
-      engine.set_world = world => set_world(engine, world);
-
-      engine.run = () => {
-        requestAnimationFrame( function(){
-          draw_frame(engine);
-        });
-      }
-
-
-      return engine;
-    }
-  }  
-})();
+}

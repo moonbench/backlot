@@ -1,28 +1,26 @@
 "use strict";
 
-const Util = (() => {
-
-  function cartesian_to_iso(x, y){
+class Util {
+  static cartesian_to_iso(x, y){
     return [
       (y-x)/2,
       (x+y)/2
     ];
   }
-  function iso_to_cartesian(x, y){
+
+  static iso_to_cartesian(x, y){
     return [
       (2 * y - x),
       (2 * y + x)
     ];
   }
 
-  function normalize_angle(angle){
+  static normalize_angle(angle){
     angle = angle % (Math.PI * 2);
     return angle >= 0 ? angle : angle += Math.PI*2;
   }
 
-  return {
-    cartesian_to_iso,
-    iso_to_cartesian,
-    normalize_angle,
-  }  
-})();
+  static current_time_in_ms(){
+    return window.performance && window.performance.now ? window.performance.now() : new Date().getTime();
+  }
+}

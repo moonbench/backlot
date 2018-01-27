@@ -57,32 +57,76 @@
     <script type="text/javascript" src="src/game.js"></script>
 
     <script type="text/javascript">
-      const game = Game.create("game_canvas");
-      game.add_fps_meter("fps_meter");
+      const game = new Game("game_canvas");
+      game.set_fps_meter("fps_meter");
 
       game.set_scene({
-        world: World.create(1280, 720),
+        world: new World(1280, 720),
 
-        setup: () => {
-          game.add_image("turret.png");
-          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]));
-          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]));
-          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]));
+        setup: (scene) => {
+          scene.add_image("turret.png");
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]));
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 90);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 80);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 70);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 60);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 50);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 40);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 30);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 20);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 10);
+          scene.add_entity(new Sprite(0, 0, 100, 100, 0, 0, scene.images["turret.png"]), 0);
 
-          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]), 80);
-          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]), 80);
-          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]), 80);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]));
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 90);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 80);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 70);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 60);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 50);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 40);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 30);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 20);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 10);
+          scene.add_entity(new Sprite(200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 0);
 
-          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]), 60);
-          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]), 60);
-          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]), 60);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]));
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 90);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 80);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 70);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 60);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 50);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 40);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 30);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 20);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 10);
+          scene.add_entity(new Sprite(-200, 200, 100, 100, 0, 0, scene.images["turret.png"]), 0);
 
-          game.add_entity(Sprite.create(0, 0, 100, 100, 0, 0, game.images["turret.png"]), 40);
-          game.add_entity(Sprite.create(-150, -150, 100, 100, 0, 0, game.images["turret.png"]), 40);
-          game.add_entity(Sprite.create(-150, 150, 100, 100, 0, 0, game.images["turret.png"]), 40);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]));
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 90);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 80);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 70);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 60);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 50);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 40);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 30);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 20);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 10);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 0);
+          scene.add_entity(new Sprite(-200, -200, 100, 100, 0, 0, scene.images["turret.png"]));
+
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 90);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 80);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 70);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 60);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 50);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 40);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 30);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 20);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 10);
+          scene.add_entity(new Sprite(200, -200, 100, 100, 0, 0, scene.images["turret.png"]), 0);
         },
 
-        update: dt => {
+        update: (scene, dt, game) => {
           const world_coords = [
             game.engine.viewport.width/2 - game.engine.cursor.x,
             game.engine.viewport.height/2 - game.engine.cursor.y
