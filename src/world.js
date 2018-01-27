@@ -35,7 +35,7 @@ class World {
       return layer1.depth-layer2.depth;
     })
   }
-  add_player_entity(entity, depth){
+  add_player_entity(entity, depth=100){
     const layer = this.find_or_create_world_layer(depth);
     if(!layer.physics){
       layer.enable_physics();
@@ -43,7 +43,7 @@ class World {
     }
     layer.add_player_entity(entity);
   }
-  add_entity(entity, depth){
+  add_entity(entity, depth=100){
     this.find_or_create_world_layer(depth).add_entity(entity);
   }
 }
