@@ -1,7 +1,7 @@
 "use strict";
 
 class Entity {
-  constructor(x = 0, y = 0, width = 0, height = 0, angle = 0, mass = 1){
+  constructor(x = 0, y = 0, width = 0, height = 0, angle = 0, mass = 0){
     this.x = x;
     this.y = y;
     this.width = width;
@@ -9,14 +9,22 @@ class Entity {
     this.angle = angle;
     this.mass = mass;
     this.dead = false;
-
-    this.normalize();
+    this.debug_level = 3;
   }
 
   reset(){}
 
   update(){
     this.reset();
+    this.normalize_if_dirty();
+  }
+
+  normalize_if_dirty(){
+    if(!this.old_values || 
+        (this.height != this.old_values.height ||
+         this.width != this.old_values.width ||
+         this.angle != this.old_values.angle)
+      ) this.normalize();
   }
 
   normalize(){
@@ -26,6 +34,7 @@ class Entity {
     this.calculate_corners();
     this.calculate_limits();
     this.set_edges();
+    this.old_values = {height: this.height, width: this.width, angle: this.angle};
   }
 
   calculate_corners(){
@@ -58,32 +67,32 @@ class Entity {
     return this;
   }
 
-  pre_render(viewport, ctx, dt){
+  pre_render(viewport, ctx){
     ctx.save();
     const canvas_coords = viewport.world_to_viewport(this.x, this.y, this.layer.depth);
     ctx.translate(canvas_coords[0], canvas_coords[1]);
     ctx.rotate(this.angle);
   }
 
-  post_render(ctx, dt){
+  post_render(ctx){
     if(this.debug_level > 0){
       ctx.rotate(0-this.angle);
-      this.render_debug(ctx, dt);
+      this.render_debug(ctx);
     }
     ctx.restore();
   }
 
-  render(ctx, dt){
+  render(ctx){
     if(this.debug_level<1) return;
-    this.render_box_outline(ctx, dt);
+    this.render_box_outline(ctx);
   }
 
-  render_box_outline(ctx, dt){
+  render_box_outline(ctx){
     ctx.lineWidth = 1;
     ctx.strokeRect(-this.height/2, -this.width/2, this.height, this.width);
   }
 
-  render_crosshair(ctx, dt){
+  render_crosshair(ctx){
     ctx.beginPath();
     ctx.moveTo(-3, 0);
     ctx.lineTo(3, 0);
@@ -92,18 +101,18 @@ class Entity {
     ctx.stroke();
   }
 
-  render_info_text(ctx, dt){
+  render_info_text(ctx){
     ctx.strokeText("[x:" + Math.round(this.x) + ", y:" + Math.round(this.y) + ", t:" + this.angle.toFixed(2) + "]", 3 + (this.width/2), -3 - (this.height/2) );
     ctx.strokeText("width:" + Math.round(this.width) + ", height:" + Math.round(this.height), 3 + (this.width/2), 10 - (this.height/2) );
   }
 
-  render_corners(ctx, dt){
-    Object.keys(this.corners).forEach(function(corner){
+  render_corners(ctx){
+    Object.keys(this.corners).forEach((corner) => {
       ctx.strokeRect(this.corners[corner][0]-3, this.corners[corner][1]-3, 6, 6);
     });
   }
 
-  render_edges(ctx, dt){
+  render_edges(ctx){
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     this.edges.forEach(function(edge){
@@ -114,27 +123,27 @@ class Entity {
     ctx.setLineDash([]);
   }
 
-  render_alignment_vector(ctx, dt){
+  render_alignment_vector(ctx){
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(this.corners.right[0], this.corners.right[1]);
     ctx.stroke();
   }
 
-  render_debug(ctx, dt){
+  render_debug(ctx){
     ctx.strokeStyle = "#308311";
     ctx.lineWidth = 1;
-    this.render_crosshair(ctx, dt);
-    this.render_alignment_vector(ctx, dt);
+    this.render_crosshair(ctx);
+    this.render_alignment_vector(ctx);
 
-    if(entity.debug_level < 2) return;
-    this.render_edges(ctx, dt);
+    if(this.debug_level < 2) return;
+    this.render_edges(ctx);
 
-    if(entity.debug_level < 3) return;
-    this.render_corners(ctx, dt);
+    if(this.debug_level < 3) return;
+    this.render_corners(ctx);
 
-    if(entity.debug_level < 4) return;
-    this.render_info_text(ctx, dt);
+    if(this.debug_level < 4) return;
+    this.render_info_text(ctx);
   }
 
   create_location_key(){
