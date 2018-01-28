@@ -4,6 +4,10 @@ class Game {
   constructor(canvas_id){
     this.engine = new Engine(document.getElementById(canvas_id));
     this.asset_depot = new AssetDepot();
+    this.add_image = this.asset_depot.add_image;
+    this.add_audio = this.asset_depot.add_audio;
+    this.images = this.asset_depot.images;
+    this.audio = this.asset_depot.audio;
   }
 
   set_scene(scene){
