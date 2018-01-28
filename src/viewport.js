@@ -43,10 +43,10 @@ class Viewport {
     const limits = this.visible_world_limits();
 
     const offsets = [0,0];
-    if(this.tracking.x > limits[1][0]-this.width/3) offsets[0] += 10;
-    if(this.tracking.x < limits[0][0]+this.width/3) offsets[0] -= 10;
-    if(this.tracking.y > limits[1][1]-this.height/3) offsets[1] += 10;
-    if(this.tracking.y < limits[0][1]+this.height/3) offsets[1] -= 10;
+    if(this.tracking.x > limits[1][0]-this.width/6) offsets[0] += 10;
+    if(this.tracking.x < limits[0][0]+this.width/6) offsets[0] -= 10;
+    if(this.tracking.y > limits[1][1]-this.height/6) offsets[1] += 10;
+    if(this.tracking.y < limits[0][1]+this.height/6) offsets[1] -= 10;
     this.center_on(this.center_world_x+offsets[0], this.center_world_y+offsets[1]);
   }
   set_limits(min_x, min_y, max_x, max_y){

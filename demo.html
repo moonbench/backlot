@@ -65,77 +65,183 @@
       const game = new Game("game_canvas");
       game.set_fps_meter("fps_meter");
 
-      class Tower extends Entity {
-        constructor(x, y){
-          super(x, y, 50, 70);
-          this.sprite = new Sprite(game.add_image("turret.png"));
-        }
-        update(dt){
-          super.update(dt);
-          this.sprite.x = this.x;
-          this.sprite.y = this.y;
-          this.sprite.width = this.width;
-          this.sprite.height = this.height;
+      class Location extends Entity {
+        constructor(x, y, radius){
+          super(x, y, radius*2, radius*2);
+          this.radius = radius;
+          this.road_radius = (this.radius+8) * 2.1;
+          this.road_peers = [];
         }
         render(ctx){
-          this.sprite.render(ctx);
+          ctx.lineWidth = 2;
+          this.render_road_radius(ctx);
+          this.render_road_peers(ctx);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.strokeStyle = "#000000";
+          ctx.beginPath();
+          ctx.arc(0, 0, this.radius, 0, 2*Math.PI);
+          ctx.fill();
+          ctx.stroke();
+        }
+        render_road_radius(ctx){            
+          ctx.beginPath();
+          ctx.setLineDash([5, 3]);
+          ctx.strokeStyle = "rgba(255,255,255,0.5)";
+          ctx.fillStyle = "rgba(255,255,255,0.10)";
+          ctx.arc(0, 0, this.road_radius, 0, 2*Math.PI);
+          ctx.stroke();
+          ctx.fill();
+          ctx.setLineDash([]);
+        }
+        render_road_peers(ctx){
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          this.road_peers.forEach((peer) => {
+            ctx.moveTo(0, 0);
+            ctx.lineTo(peer.x-this.x, peer.y-this.y);
+          });
+          ctx.stroke();
         }
       }
 
-      class Player extends Entity {
-        constructor(x, y){
-          super(x, y, 50, 70);
-          this.sprite = new Animation([
-            game.add_image("person_n.png"),
-            game.add_image("person_ne.png"),
-            game.add_image("person_e.png"),
-            game.add_image("person_se.png"),
-            game.add_image("person_s.png"),
-            game.add_image("person_sw.png"),
-            game.add_image("person_w.png"),
-            game.add_image("person_nw.png"),
-          ]);
-          this.sprite.speed = 8;
+      class AirportLocation extends Location {
+        constructor(x, y, radius){
+          super(x, y, radius);
+          this.air_radius = (this.radius+24) * 2.8;
+          this.air_peers = [];
         }
-        update_sprite(dt){
-          this.sprite.update(dt);
-          this.sprite.x = this.x;
-          this.sprite.y = this.y;
-          this.sprite.width = this.width;
-          this.sprite.height = this.height;
-        }
-        update(dt){
-          super.update(dt);
-          this.update_sprite(dt);
+        render_air_radius(ctx){            
+          ctx.beginPath();
+          ctx.setLineDash([5, 3]);
+          ctx.strokeStyle = "rgba(200,200,255,0.6)";
+          ctx.fillStyle = "rgba(180,180,255,0.10)";
+          ctx.arc(0, 0, this.air_radius, 0, 2*Math.PI);
+          ctx.stroke();
+          ctx.fill();
+          ctx.setLineDash([]);
         }
         render(ctx){
-          this.sprite.render(ctx);
+          this.render_air_radius(ctx);
+          this.render_air_peers(ctx);
+          super.render(ctx);
+        }
+        render_air_peers(ctx){
+          ctx.strokeStyle = "#BBBBFF";
+          ctx.beginPath();
+          ctx.lineWidth = 3;
+          this.air_peers.forEach((peer) => {
+            ctx.moveTo(0, 0);
+            ctx.lineTo(peer.x-this.x, peer.y-this.y);
+          });
+          ctx.stroke();
+        }
+      }
+
+      class Capitol extends AirportLocation {
+        constructor(x, y){
+          super(x, y, 14);
+        }
+      }
+
+      class Town extends AirportLocation {
+        constructor(x, y){
+          super(x, y, 10);
+        }
+      }
+
+      class Village extends Location {
+        constructor(x, y){
+          super(x, y, 7);
+        }
+      }
+
+      class Settlement extends Location {
+        constructor(x, y){
+          super(x, y, 5);
+        }
+      }
+
+      class Outpost extends Location {
+        constructor(x, y){
+          super(x, y, 3);
+        }
+      }
+
+      class Roadsign extends Location {
+        constructor(x, y){
+          super(x, y, 1);
+        }
+      }
+
+      class Lighthouse extends AirportLocation {
+        constructor(x, y){
+          super(x, y, 2);
         }
       }
 
       game.set_scene({
         world: new World(1280*2, 720*2),
 
-        setup: (scene, game) => {
-          scene.add_entity(new Sprite(game.add_image("world.png"), 0, 0, 1280*2, 720*2));
-          scene.player = new Player(100, 100);
-          scene.add_entity(scene.player);
-          game.engine.viewport.track(scene.player);
-          game.add_audio("bang1.mp3");
+        setup: function(){
+          this.add_entity(new Sprite(game.add_image("world.png"), 0, 0, 1280*2, 720*2));
+          this.set_current_build_type(Capitol);
+          this.locations = [];
+          this.game.add_audio("bang1.mp3");
         },
 
-        update: (scene, dt, game) => {
+        update: function(dt){
+          this.move_player_to_cursor();
+        },
+
+        move_player_to_cursor: function(){          
           let world_coords = game.engine.viewport.viewport_to_world(game.engine.cursor.x, game.engine.cursor.y);
-          scene.player.x = world_coords[0];
-          scene.player.y = world_coords[1];
+          this.player.x = world_coords[0];
+          this.player.y = world_coords[1];
         },
 
-        handle_mouse_button: (scene, event, pressed) => {
+        handle_mouse_button: function(event, pressed){
           if(!pressed) return;
+
+          this.game.audio["bang1.mp3"].currentTime = 0;
+          this.game.audio["bang1.mp3"].play();
+          
           let world_coords = game.engine.viewport.viewport_to_world(game.engine.cursor.x, game.engine.cursor.y);
-          scene.add_entity(new Tower(world_coords[0], world_coords[1]));
-          game.audio["bang1.mp3"].currentTime = 0;
-          game.audio["bang1.mp3"].play();
+          let new_location = new this.build_type(world_coords[0], world_coords[1]);
+
+          this.locations.forEach((location) => {
+            const distance = Math.sqrt(Math.pow(location.x - new_location.x, 2) + Math.pow(location.y - new_location.y, 2));
+            if(location.road_radius && new_location.road_radius && distance < location.road_radius + new_location.road_radius){
+              location.road_peers.push(new_location);
+              new_location.road_peers.push(location);
+            }
+            if(location.air_radius && new_location.air_radius && distance  < location.air_radius + new_location.air_radius){
+              location.air_peers.push(new_location);
+              new_location.air_peers.push(location);
+            }
+          });
+
+          this.locations.push(new_location);
+          this.add_entity(new_location);
+        },
+
+        handle_key: function(event, pressed){
+          if(event.key == "1") this.set_current_build_type(Capitol);
+          if(event.key == "2") this.set_current_build_type(Town);
+          if(event.key == "3") this.set_current_build_type(Village);
+          if(event.key == "4") this.set_current_build_type(Settlement);
+          if(event.key == "5") this.set_current_build_type(Outpost);
+          if(event.key == "6") this.set_current_build_type(Roadsign);
+          if(event.key == "7") this.set_current_build_type(Lighthouse);
+        },
+
+        set_current_build_type: function(build_type){
+          this.build_type = build_type;
+          if(this.player) this.player.dead = true;
+          this.player = new build_type(0, 0);
+          this.move_player_to_cursor();
+          this.add_entity(this.player);
+          this.game.engine.viewport.track(this.player);
         }
       });
 
