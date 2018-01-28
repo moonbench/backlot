@@ -1,15 +1,14 @@
 "use strict";
 
 class Entity {
-  constructor(x = 0, y = 0, width = 0, height = 0, angle = 0, mass = 0){
+  constructor(x = 0, y = 0, width = 0, height = 0, angle = 0){
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
     this.angle = angle;
-    this.mass = mass;
     this.dead = false;
-    this.debug_level = 3;
+    this.debug_level = 0;
   }
 
   reset(){}
@@ -28,7 +27,6 @@ class Entity {
   }
 
   normalize(){
-    this.mass = this.mass < 0.00001 ? 0.00001 : this.mass;
     this.angle = Util.normalize_angle(this.angle);
     this.max_radius = Math.sqrt( Math.pow(this.width/2,2) + Math.pow(this.height/2,2));
     this.calculate_corners();
@@ -39,8 +37,8 @@ class Entity {
 
   calculate_corners(){
     this.corners = {};
-    this.corners.top = [Math.sin(this.angle)*this.width/2, -Math.cos(this.angle)*this.width/2];
-    this.corners.right = [Math.cos(this.angle)*this.height/2, Math.sin(this.angle)*this.height/2];
+    this.corners.top = [Math.sin(this.angle)*this.height/2, -Math.cos(this.angle)*this.height/2];
+    this.corners.right = [Math.cos(this.angle)*this.width/2, Math.sin(this.angle)*this.width/2];
     this.corners.bottom = [-this.corners.top[0], -this.corners.top[1]];
     this.corners.left = [-this.corners.right[0], -this.corners.right[1]];
     this.corners.top_right = [this.corners.top[0]+this.corners.right[0], this.corners.top[1]+this.corners.right[1]];
@@ -69,8 +67,7 @@ class Entity {
 
   pre_render(viewport, ctx){
     ctx.save();
-    const canvas_coords = viewport.world_to_viewport(this.x, this.y, this.layer.depth);
-    ctx.translate(canvas_coords[0], canvas_coords[1]);
+    ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
   }
 
@@ -89,7 +86,7 @@ class Entity {
 
   render_box_outline(ctx){
     ctx.lineWidth = 1;
-    ctx.strokeRect(-this.height/2, -this.width/2, this.height, this.width);
+    ctx.strokeRect(-this.width/2, -this.height/2, this.width, this.height);
   }
 
   render_crosshair(ctx){

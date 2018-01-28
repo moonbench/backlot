@@ -33,6 +33,10 @@
         margin: 0px auto;
         position: relative;
       }
+      input {
+        padding: 0.1em;
+        font-size: 1.2em;
+      }
     </style>
   </head>
 
@@ -61,9 +65,26 @@
       const game = new Game("game_canvas");
       game.set_fps_meter("fps_meter");
 
+      class Tower extends Entity {
+        constructor(x, y){
+          super(x, y, 50, 70);
+          this.sprite = new Sprite(game.add_image("turret.png"));
+        }
+        update(dt){
+          super.update(dt);
+          this.sprite.x = this.x;
+          this.sprite.y = this.y;
+          this.sprite.width = this.width;
+          this.sprite.height = this.height;
+        }
+        render(ctx){
+          this.sprite.render(ctx);
+        }
+      }
+
       class Player extends Entity {
         constructor(x, y){
-          super(x, y, 175, 100);
+          super(x, y, 50, 70);
           this.sprite = new Animation([
             game.add_image("person_n.png"),
             game.add_image("person_ne.png"),
@@ -74,7 +95,7 @@
             game.add_image("person_w.png"),
             game.add_image("person_nw.png"),
           ]);
-          this.sprite.speed = 30;
+          this.sprite.speed = 8;
         }
         update_sprite(dt){
           this.sprite.update(dt);
@@ -93,20 +114,28 @@
       }
 
       game.set_scene({
-        world: new World(1280, 720),
+        world: new World(1280*2, 720*2),
 
-        setup: (scene) => {
-          scene.player = new Player(0, 0);
+        setup: (scene, game) => {
+          scene.add_entity(new Sprite(game.add_image("world.png"), 0, 0, 1280*2, 720*2));
+          scene.player = new Player(100, 100);
           scene.add_entity(scene.player);
+          game.engine.viewport.track(scene.player);
+          game.add_audio("bang1.mp3");
         },
 
         update: (scene, dt, game) => {
-          const world_coords = [
-            game.engine.cursor.x - game.engine.viewport.width/2,
-            game.engine.cursor.y - game.engine.viewport.height/2
-          ];
+          let world_coords = game.engine.viewport.viewport_to_world(game.engine.cursor.x, game.engine.cursor.y);
           scene.player.x = world_coords[0];
           scene.player.y = world_coords[1];
+        },
+
+        handle_mouse_button: (scene, event, pressed) => {
+          if(!pressed) return;
+          let world_coords = game.engine.viewport.viewport_to_world(game.engine.cursor.x, game.engine.cursor.y);
+          scene.add_entity(new Tower(world_coords[0], world_coords[1]));
+          game.audio["bang1.mp3"].currentTime = 0;
+          game.audio["bang1.mp3"].play();
         }
       });
 

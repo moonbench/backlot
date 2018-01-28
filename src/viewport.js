@@ -12,7 +12,10 @@ class Viewport {
   }
 
   clear(ctx){
-    ctx.clearRect(0, 0, this.width, this.height);
+    ctx.clearRect(this.left_offset, this.top_offset, this.width, this.height);
+  }
+  update(dt){
+    if(this.tracking) this.track();
   }
   render_border(ctx){
     ctx.strokeStyle = "#3f4653";
@@ -21,25 +24,57 @@ class Viewport {
     ctx.lineWidth = 1;
   }
   center_on(world_x, world_y){
-    this.center_world_x = world_x;
-    this.center_world_y = world_y;
+    if(world_x < this.limits.scrolling.min_x)
+      this.center_world_x = this.limits.scrolling.min_x;
+    else if(world_x >= this.limits.scrolling.max_x)
+      this.center_world_x = this.limits.scrolling.max_x;
+    else
+      this.center_world_x = world_x;
+    
+    if(world_y < this.limits.scrolling.min_y)
+      this.center_world_y = this.limits.scrolling.min_y;
+    else if(world_y >= this.limits.scrolling.max_y)
+      this.center_world_y= this.limits.scrolling.max_y;
+    else
+      this.center_world_y = world_y;
+  }
+  track(entity){
+    if(entity) this.tracking = entity;
+    const limits = this.visible_world_limits();
+
+    const offsets = [0,0];
+    if(this.tracking.x > limits[1][0]-this.width/3) offsets[0] += 10;
+    if(this.tracking.x < limits[0][0]+this.width/3) offsets[0] -= 10;
+    if(this.tracking.y > limits[1][1]-this.height/3) offsets[1] += 10;
+    if(this.tracking.y < limits[0][1]+this.height/3) offsets[1] -= 10;
+    this.center_on(this.center_world_x+offsets[0], this.center_world_y+offsets[1]);
+  }
+  set_limits(min_x, min_y, max_x, max_y){
+    this.limits = {
+      scrolling: {
+        min_x: min_x + this.width/2,
+        min_y: min_y + this.height/2,
+        max_x: max_x - this.width/2,
+        max_y: max_y - this.height/2
+      }
+    };
   }
   world_to_viewport(x, y, depth=100){
     return [
-      this.width/2 + ((x-this.center_world_x)*(depth/100)),
-      this.height/2 + ((y-this.center_world_y)*(depth/100))
+      this.width/2 + this.left_offset + ((x - this.center_world_x)*(depth/100)),
+      this.height/2 + this.top_offset + ((y - this.center_world_y)*(depth/100))
     ];
   }
   viewport_to_world(x, y, depth=100){
     return [
-      ((this.center_world_x + x)*(depth/100))-this.width/2,
-      ((this.center_world_y + y)*(depth/100))-this.height/2
+      ((this.center_world_x + x)*(depth/100))-this.width/2 - this.left_offset,
+      ((this.center_world_y + y)*(depth/100))-this.height/2 - this.top_offset
     ];
   }
   visible_world_limits(){
     return [
-      this.viewport_to_world(0,0),
-      this.viewport_to_world(this.width, this.height)
+      this.viewport_to_world(this.left_offset, this.top_offset),
+      this.viewport_to_world(this.width+this.left_offset, this.height+this.top_offset)
     ];
   }
 }

@@ -1,8 +1,8 @@
 "use strict";
 
 class Animation extends Sprite {
-  constructor(assets, x, y, width, height, angle, mass){
-    super(null, x, y, width, height, angle, mass);
+  constructor(assets, x, y, width, height, angle){
+    super(null, x, y, width, height, angle);
     this.assets = assets;
     this.repeat = false;
     this.speed = 1;

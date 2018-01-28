@@ -46,6 +46,7 @@ class Engine {
   set_world(world){
     this.world = world;
     world.engine = this;
+    this.viewport.set_limits(-world.width/2, -world.height/2, world.width/2, world.height/2);
   }
 
   set_cursor(cursor){
@@ -61,6 +62,7 @@ class Engine {
   update(dt){
     if(this.world) this.world.update(dt);
     if(this.update_function) this.update_function(dt);
+    if(this.viewport) this.viewport.update(dt);
   }
 
   render(){

@@ -5,7 +5,7 @@ class Cursor {
     this.x = x;
     this.y = y;
     this.canvas = canvas;
-    this.debug_level = 3;
+    this.debug_level = 1;
   }
 
   render(ctx){
