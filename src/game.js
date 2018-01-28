@@ -12,17 +12,14 @@ class Game {
 
   set_scene(scene){
     this.scene = scene;
-    scene.add_image = this.asset_depot.add_image;
-    scene.add_audio = this.asset_depot.add_audio;
-    scene.images = this.asset_depot.images;
-    scene.audio = this.asset_depot.audio;
 
     this.engine.set_world(scene.world);
     scene.add_player_entity = this.engine.world.add_player_entity;
     scene.add_entity = this.engine.world.add_entity;
 
-    if(scene.setup) scene.setup(scene);
+    if(scene.setup) scene.setup(scene, game);
     if(scene.update) this.engine.update_function = (dt) => scene.update(scene, dt, this);
+    if(scene.handle_mouse_button) this.engine.handle_mouse_button = (event, pressed) => scene.handle_mouse_button(scene, event, pressed);
   }
 
   set_fps_meter(meter_id){

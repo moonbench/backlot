@@ -26,8 +26,9 @@ class Layer {
     if(this.quadtree) this.quadtree.run_collision_checks();
   }
 
-  render_axis(ctx){    
-    ctx.setLineDash([4, 4]);
+  render_axis(ctx){
+    if(this.depth == 100) ctx.setLineDash([8, 4]);
+    else ctx.setLineDash([4, 8]);
     ctx.beginPath();
     ctx.moveTo(-this.world.width/2, 0);
     ctx.lineTo(this.world.width/2, 0);
@@ -41,22 +42,21 @@ class Layer {
   }
 
   render(ctx){
+    ctx.save();
+    const offset = this.world.engine.viewport.world_to_viewport(0,0,this.depth);
+    ctx.translate(offset[0], offset[1]);
     if(this.debug_level >= 1){
-      ctx.save();
-      const offset = this.world.engine.viewport.world_to_viewport(0,0,this.depth);
-      ctx.translate(offset[0], offset[1]);
       ctx.strokeStyle = "rgba(255,255,255,0.5)";
       this.render_border(ctx);
       this.render_axis(ctx);
-      ctx.restore();
     }
 
     const world_limits = this.world.engine.viewport.visible_world_limits();
     this.entities.forEach((entity) => {
-      if(entity.max.x < world_limits[0][0] ||
-         entity.max.y < world_limits[0][1] ||
-         entity.min.x > world_limits[1][0] ||
-         entity.min.y > world_limits[1][1])
+      if(entity.x + entity.max.x < world_limits[0][0] ||
+         entity.y + entity.max.y < world_limits[0][1] ||
+         entity.x + entity.min.x > world_limits[1][0] ||
+         entity.y + entity.min.y > world_limits[1][1])
         return;
 
       entity.pre_render(this.world.engine.viewport, ctx);
@@ -64,6 +64,7 @@ class Layer {
       entity.post_render(ctx);
     });
     if(this.quadtree) this.quadtree.render(this, ctx);
+    ctx.restore();
   }
 
   add_player_entity(entity){
