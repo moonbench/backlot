@@ -8,17 +8,24 @@ class Sprite extends Entity {
   }
 
   render(ctx){
-    if(this.asset)
-      if(this.repeat){
-        ctx.fillStyle = ctx.createPattern(this.asset, this.repeat);
-        ctx.fillRect(-this.height/2, -this.width/2, this.height, this.width);
-      } else {
-        ctx.drawImage(this.asset, -this.height/2, -this.width/2, this.height, this.width);
-      }
-    else {
-      ctx.fillStyle = "#222222";
-      ctx.fillRect(-this.height/2, -this.width/2, this.height, this.width);
-    }
+    this.render_asset(this.asset, ctx)
     super.render(ctx);
+  }
+
+  render_asset(asset, ctx){
+    if(!asset) return;
+    if(this.repeat)
+      this.render_pattern(asset, ctx);
+    else
+      this.render_image(asset, ctx);
+  }
+
+  render_image(asset, ctx){
+    ctx.drawImage(asset, -this.height/2, -this.width/2, this.height, this.width);
+  }
+
+  render_pattern(asset, ctx){    
+    ctx.fillStyle = ctx.createPattern(asset, this.repeat);
+    ctx.fillRect(-this.height/2, -this.width/2, this.height, this.width);
   }
 }

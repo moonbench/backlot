@@ -54,29 +54,59 @@
     <script type="text/javascript" src="src/asset_depot.js"></script>
     <script type="text/javascript" src="src/entity.js"></script>
     <script type="text/javascript" src="src/entities/sprite.js"></script>
+    <script type="text/javascript" src="src/entities/animation.js"></script>
     <script type="text/javascript" src="src/game.js"></script>
 
     <script type="text/javascript">
       const game = new Game("game_canvas");
       game.set_fps_meter("fps_meter");
 
+      class Player extends Entity {
+        constructor(x, y){
+          super(x, y, 175, 100);
+          this.sprite = new Animation([
+            game.add_image("person_n.png"),
+            game.add_image("person_ne.png"),
+            game.add_image("person_e.png"),
+            game.add_image("person_se.png"),
+            game.add_image("person_s.png"),
+            game.add_image("person_sw.png"),
+            game.add_image("person_w.png"),
+            game.add_image("person_nw.png"),
+          ]);
+          this.sprite.speed = 30;
+        }
+        update_sprite(dt){
+          this.sprite.update(dt);
+          this.sprite.x = this.x;
+          this.sprite.y = this.y;
+          this.sprite.width = this.width;
+          this.sprite.height = this.height;
+        }
+        update(dt){
+          super.update(dt);
+          this.update_sprite(dt);
+        }
+        render(ctx){
+          this.sprite.render(ctx);
+        }
+      }
+
       game.set_scene({
         world: new World(1280, 720),
 
         setup: (scene) => {
-          scene.add_image("turret.png");
-          scene.turret = new Sprite(scene.images["turret.png"]);
-          scene.turret.width = 100;
-          scene.turret.height = 100;
-          scene.add_entity(scene.turret);
+          scene.player = new Player(0, 0);
+          scene.add_entity(scene.player);
         },
 
         update: (scene, dt, game) => {
           const world_coords = [
-            game.engine.viewport.width/2 - game.engine.cursor.x,
-            game.engine.viewport.height/2 - game.engine.cursor.y
+            game.engine.cursor.x - game.engine.viewport.width/2,
+            game.engine.cursor.y - game.engine.viewport.height/2
           ];
-          game.engine.viewport.center_on(world_coords[0], world_coords[1]);
+          scene.player.x = world_coords[0];
+          scene.player.y = world_coords[1];
         }
       });
 
