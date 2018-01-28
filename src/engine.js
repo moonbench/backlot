@@ -19,6 +19,12 @@ class Engine {
   }
 
   bind_mouse(){
+    document.addEventListener("keydown", (event) => {
+      if(this.handle_key) this.handle_key(event, true);
+    });
+    document.addEventListener("keyup", (event) => {
+      if(this.handle_key) this.handle_key(event, false);
+    });
     this.canvas.addEventListener("mousemove", (event) => {
       if(this.cursor) this.cursor.handle_mouse_move(event);
       if(this.handle_mouse_move) this.handle_mouse_move(event)
