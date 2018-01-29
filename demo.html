@@ -53,6 +53,7 @@
     <script type="text/javascript" src="src/cursor.js"></script>
     <script type="text/javascript" src="src/viewport.js"></script>
     <script type="text/javascript" src="src/engine.js"></script>
+    <script type="text/javascript" src="src/world/quadtree.js"></script>
     <script type="text/javascript" src="src/world/layer.js"></script>
     <script type="text/javascript" src="src/world.js"></script>
     <script type="text/javascript" src="src/asset_depot.js"></script>
@@ -70,12 +71,20 @@
           super(x, y, radius*2, radius*2);
           this.radius = radius;
           this.road_radius = (this.radius+8) * 2.1;
+          this.width = this.height = this.road_radius * 2;
           this.road_peers = [];
+          this.show_radii = false;
+          this.show_peers = true;
+          this.solid = true;
+        }
+        update(dt){
+          super.update(dt);
+          this.show_radii = false;
         }
         render(ctx){
           ctx.lineWidth = 2;
-          this.render_road_radius(ctx);
-          this.render_road_peers(ctx);
+          if(this.show_radii) this.render_road_radius(ctx);
+          if(this.show_peers) this.render_road_peers(ctx);
           ctx.fillStyle = "#FFFFFF";
           ctx.strokeStyle = "#000000";
           ctx.beginPath();
@@ -103,6 +112,13 @@
           });
           ctx.stroke();
         }
+        check_collision_against(other_location){
+          const distance = Math.sqrt(Math.pow(other_location.x - this.x, 2) + Math.pow(other_location.y - this.y, 2));
+          if((other_location.is_player || this.is_player) && distance < this.road_radius + other_location.road_radius){
+            this.show_radii = true;
+            other_location.show_radii = true;
+          }
+        }
       }
 
       class AirportLocation extends Location {
@@ -110,6 +126,7 @@
           super(x, y, radius);
           this.air_radius = (this.radius+24) * 2.8;
           this.air_peers = [];
+          this.width = this.height = this.air_radius * 2;
         }
         render_air_radius(ctx){            
           ctx.beginPath();
@@ -122,8 +139,8 @@
           ctx.setLineDash([]);
         }
         render(ctx){
-          this.render_air_radius(ctx);
-          this.render_air_peers(ctx);
+          if(this.show_radii) this.render_air_radius(ctx);
+          if(this.show_peers) this.render_air_peers(ctx);
           super.render(ctx);
         }
         render_air_peers(ctx){
@@ -135,6 +152,14 @@
             ctx.lineTo(peer.x-this.x, peer.y-this.y);
           });
           ctx.stroke();
+        }
+        check_collision_against(other_location){
+          super.check_collision_against(other_location);
+          const distance = Math.sqrt(Math.pow(other_location.x - this.x, 2) + Math.pow(other_location.y - this.y, 2));
+          if((other_location.is_player || this.is_player) && distance < this.air_radius + other_location.air_radius){
+            this.show_radii = true;
+            other_location.show_radii = true;
+          }
         }
       }
 
@@ -192,6 +217,7 @@
 
         update: function(dt){
           this.move_player_to_cursor();
+          this.player.show_radii = true;
         },
 
         move_player_to_cursor: function(){          
@@ -205,7 +231,7 @@
 
           this.game.audio["bang1.mp3"].currentTime = 0;
           this.game.audio["bang1.mp3"].play();
-          
+
           let world_coords = game.engine.viewport.viewport_to_world(game.engine.cursor.x, game.engine.cursor.y);
           let new_location = new this.build_type(world_coords[0], world_coords[1]);
 
@@ -239,8 +265,10 @@
           this.build_type = build_type;
           if(this.player) this.player.dead = true;
           this.player = new build_type(0, 0);
+          this.player.show_radii = true;
+          this.player.is_player = true;
           this.move_player_to_cursor();
-          this.add_entity(this.player);
+          this.add_player_entity(this.player);
           this.game.engine.viewport.track(this.player);
         }
       });
