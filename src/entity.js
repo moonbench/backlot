@@ -128,7 +128,7 @@ class Entity {
   }
 
   render_debug(ctx){
-    ctx.strokeStyle = "#308311";
+    ctx.strokeStyle = "#86f962";
     ctx.lineWidth = 1;
     this.render_crosshair(ctx);
     this.render_alignment_vector(ctx);

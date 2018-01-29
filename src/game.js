@@ -15,8 +15,8 @@ class Game {
     scene.game = this;
 
     this.engine.set_world(scene.world);
-    scene.add_player_entity = this.engine.world.add_player_entity;
-    scene.add_entity = this.engine.world.add_entity;
+    scene.add_player_entity = this.engine.world.add_player_entity.bind(this.engine.world);
+    scene.add_entity = this.engine.world.add_entity.bind(this.engine.world);
 
     if(scene.setup){
       scene.setup.bind(scene)();

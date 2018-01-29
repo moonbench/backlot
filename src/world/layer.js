@@ -17,7 +17,7 @@ class Layer {
 
     this.entities = this.entities.concat(pending).map((entity) => {
       entity.update(dt);
-      if(this.quadtree && entity.collidable) this.quadtree.add(entity);
+      if(this.quadtree && entity.solid) this.quadtree.add(entity);
       return entity;
     }).filter((entity) => {
       return entity.dead == false;
@@ -63,7 +63,7 @@ class Layer {
       entity.render(ctx);
       entity.post_render(ctx);
     });
-    if(this.quadtree) this.quadtree.render(this, ctx);
+    if(this.quadtree) this.quadtree.render(ctx);
     ctx.restore();
   }
 
@@ -78,7 +78,7 @@ class Layer {
 
   enable_physics(){
     this.physics = true;
-    this.quadtree = QuadTree.create(this);
+    this.quadtree = new QuadTree(this);
     this.quadtree.layer = this;
   }
 }
