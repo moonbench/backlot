@@ -5,7 +5,6 @@ class Layer {
     this.depth = depth;
     this.world = world;
     this.entities = [];
-    this.player_entities = [];
     this.pending_addition = [];
     this.debug_level = 3;
   }
@@ -17,7 +16,7 @@ class Layer {
 
     this.entities = this.entities.concat(pending).map((entity) => {
       entity.update(dt);
-      if(this.quadtree && entity.solid) this.quadtree.add(entity);
+      if(this.quadtree && entity.physics) this.quadtree.add(entity);
       return entity;
     }).filter((entity) => {
       return entity.dead == false;
@@ -67,11 +66,7 @@ class Layer {
     ctx.restore();
   }
 
-  add_player_entity(entity){
-    this.add_entity(entity);
-    this.player_entities.push(entity);
-  }
-  add_entity(entity){
+  add(entity){
     entity.layer = this;
     this.pending_addition.push(entity);
   }

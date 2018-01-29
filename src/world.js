@@ -5,10 +5,9 @@ class World {
     this.width = width;
     this.height = height;
     this.layers = [];
-    this.physics_layers = [];
     this.allow_negative = false;
     this.debug_level = 1;
-    this.add_entity = this.add_entity.bind(this);
+    this.add = this.add.bind(this);
   }
 
   update(dt){
@@ -35,15 +34,10 @@ class World {
       return layer1.depth-layer2.depth;
     })
   }
-  add_player_entity(entity, depth=100){
+  add(entity, depth=100){
     const layer = this.find_or_create_world_layer(depth);
-    if(!layer.physics){
+    if(entity.physics && !layer.physics)
       layer.enable_physics();
-      this.physics_layers.push(layer);
-    }
-    layer.add_player_entity(entity);
-  }
-  add_entity(entity, depth=100){
-    this.find_or_create_world_layer(depth).add_entity(entity);
+    layer.add(entity);
   }
 }

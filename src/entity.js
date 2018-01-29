@@ -8,7 +8,8 @@ class Entity {
     this.height = height;
     this.angle = angle;
     this.dead = false;
-    this.debug_level = 0;
+    this.debug_level = 2;
+    this.anchor_to = null;
   }
 
   reset(){}
@@ -16,6 +17,16 @@ class Entity {
   update(){
     this.reset();
     this.normalize_if_dirty();
+    this.follow_anchor();
+  }
+
+  follow_anchor(){
+    if(!this.anchor_to) return;
+    this.x = this.anchor_to.x;
+    this.y = this.anchor_to.y;
+    this.angle = this.anchor_to.angle;
+    this.width = this.anchor_to.width;
+    this.height = this.anchor_to.height;
   }
 
   normalize_if_dirty(){
@@ -141,11 +152,5 @@ class Entity {
 
     if(this.debug_level < 4) return;
     this.render_info_text(ctx);
-  }
-
-  create_location_key(){
-    return this.x.toFixed(3) + "." + this.y.toFixed(3) +
-      "." + this.angle.toFixed(3) +
-      "." + this.width + "." + this.height;
   }
 }
