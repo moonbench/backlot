@@ -60,6 +60,7 @@
     <script type="text/javascript" src="src/entity.js"></script>
     <script type="text/javascript" src="src/entities/sprite.js"></script>
     <script type="text/javascript" src="src/entities/animation.js"></script>
+    <script type="text/javascript" src="src/entities/physics.js"></script>
     <script type="text/javascript" src="src/game.js"></script>
 
     <script type="text/javascript">
@@ -75,14 +76,19 @@
           this.road_peers = [];
           this.show_radii = false;
           this.show_peers = true;
-          this.solid = true;
+          this.physics = new Physics(x, y, radius*2, radius*2);
+          this.physics.anchor_to = this;
+          this.physics.shape = "circle";
+          this.physics.debug_level = 2;
         }
         update(dt){
           super.update(dt);
+          this.physics.update(dt);
           this.show_radii = false;
         }
         render(ctx){
           ctx.lineWidth = 2;
+          this.physics.render(ctx);
           if(this.show_radii) this.render_road_radius(ctx);
           if(this.show_peers) this.render_road_peers(ctx);
           ctx.fillStyle = "#FFFFFF";
@@ -92,7 +98,7 @@
           ctx.fill();
           ctx.stroke();
         }
-        render_road_radius(ctx){            
+        render_road_radius(ctx){
           ctx.beginPath();
           ctx.setLineDash([5, 3]);
           ctx.strokeStyle = "rgba(255,255,255,0.5)";
@@ -112,9 +118,9 @@
           });
           ctx.stroke();
         }
-        check_collision_against(other_location){
-          const distance = Math.sqrt(Math.pow(other_location.x - this.x, 2) + Math.pow(other_location.y - this.y, 2));
-          if((other_location.is_player || this.is_player) && distance < this.road_radius + other_location.road_radius){
+        check_collision(other_location){
+          if(!this.physics.check_collision(other_location.physics)) return;
+          if(other_location.is_player || this.is_player){
             this.show_radii = true;
             other_location.show_radii = true;
           }
@@ -152,14 +158,6 @@
             ctx.lineTo(peer.x-this.x, peer.y-this.y);
           });
           ctx.stroke();
-        }
-        check_collision_against(other_location){
-          super.check_collision_against(other_location);
-          const distance = Math.sqrt(Math.pow(other_location.x - this.x, 2) + Math.pow(other_location.y - this.y, 2));
-          if((other_location.is_player || this.is_player) && distance < this.air_radius + other_location.air_radius){
-            this.show_radii = true;
-            other_location.show_radii = true;
-          }
         }
       }
 
@@ -209,7 +207,7 @@
         world: new World(1280*2, 720*2),
 
         setup: function(){
-          this.add_entity(new Sprite(game.add_image("world.png"), 0, 0, 1280*2, 720*2));
+          this.add(new Sprite(game.add_image("world.png"), 0, 0, 1280*2, 720*2));
           this.set_current_build_type(Capitol);
           this.locations = [];
           this.game.add_audio("bang1.mp3");
@@ -248,7 +246,7 @@
           });
 
           this.locations.push(new_location);
-          this.add_entity(new_location);
+          this.add(new_location);
         },
 
         handle_key: function(event, pressed){
@@ -268,7 +266,7 @@
           this.player.show_radii = true;
           this.player.is_player = true;
           this.move_player_to_cursor();
-          this.add_player_entity(this.player);
+          this.add(this.player);
           this.game.engine.viewport.track(this.player);
         }
       });

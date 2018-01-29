@@ -69,7 +69,7 @@ const Node = (function(){
     } else {
       for(var i = 0; i < node.items.length; i++){
         for(var j = i+1; j < node.items.length; j++){
-          node.items[i].check_collision_against(node.items[j]);
+          node.items[i].check_collision(node.items[j]);
         }
       }
     }
@@ -84,7 +84,7 @@ const Node = (function(){
     ctx.strokeText("I: " + node.items.length, node.width/2, node.height/2+10);
   }
   function draw_quad_node(engine, node, ctx, dt){
-    ctx.strokeStyle = "rgba(0,0,0,0.5)";
+    ctx.strokeStyle = "rgba(0,0,50,0.4)";
     ctx.strokeRect(0, 0, node.width, node.height);
 
     if(node.debug_level<2) return;
