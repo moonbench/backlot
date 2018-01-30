@@ -8,8 +8,8 @@ class Entity {
     this.height = height;
     this.angle = angle;
     this.dead = false;
-    this.debug_level = 2;
-    this.anchor_to = null;
+    this.debug_level = 1;
+    this.anchor = null;
   }
 
   reset(){}
@@ -20,13 +20,18 @@ class Entity {
     this.follow_anchor();
   }
 
+  anchor_to(entity){
+    this.anchor = entity;
+    this.follow_anchor();
+  }
+
   follow_anchor(){
-    if(!this.anchor_to) return;
-    this.x = this.anchor_to.x;
-    this.y = this.anchor_to.y;
-    this.angle = this.anchor_to.angle;
-    this.width = this.anchor_to.width;
-    this.height = this.anchor_to.height;
+    if(!this.anchor) return;
+    this.x = this.anchor.x;
+    this.y = this.anchor.y;
+    this.angle = this.anchor.angle;
+    this.width = this.anchor.width;
+    this.height = this.anchor.height;
   }
 
   normalize_if_dirty(){
