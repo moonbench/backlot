@@ -12,17 +12,18 @@ class Layer {
   update(dt){
     if(this.quadtree) this.quadtree.reset();
     const pending = this.pending_addition;
+    Matter.Engine.update(this.physics_engine, dt*1000);
     this.pending_addition = [];
 
     this.entities = this.entities.concat(pending).map((entity) => {
       entity.update(dt);
-      if(this.quadtree && entity.physics) this.quadtree.add(entity);
       return entity;
     }).filter((entity) => {
+      if(entity.dead && this.physics_engine){
+        Matter.World.remove(this.physics_engine.world, entity.physics);
+      }
       return entity.dead == false;
     });
-
-    if(this.quadtree) this.quadtree.run_collision_checks();
   }
 
   render_axis(ctx){
@@ -69,11 +70,11 @@ class Layer {
   add(entity){
     entity.layer = this;
     this.pending_addition.push(entity);
+    if(this.physics_engine && entity.physics) Matter.World.add(this.physics_engine.world, entity.physics);
   }
 
   enable_physics(){
     this.physics = true;
-    this.quadtree = new QuadTree(this);
-    this.quadtree.layer = this;
+    this.physics_engine = Matter.Engine.create();
   }
 }
