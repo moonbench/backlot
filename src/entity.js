@@ -8,7 +8,7 @@ class Entity {
     this.height = height;
     this.angle = angle;
     this.dead = false;
-    this.debug_level = 1;
+    this.debug_level = 0;
     this.anchor = null;
   }
 
