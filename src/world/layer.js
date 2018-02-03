@@ -12,7 +12,7 @@ class Layer {
   update(dt){
     if(this.quadtree) this.quadtree.reset();
     const pending = this.pending_addition;
-    Matter.Engine.update(this.physics_engine, dt*1000);
+    if(this.physics_engine) Matter.Engine.update(this.physics_engine, dt*1000);
     this.pending_addition = [];
 
     this.entities = this.entities.concat(pending).map((entity) => {
@@ -76,5 +76,6 @@ class Layer {
   enable_physics(){
     this.physics = true;
     this.physics_engine = Matter.Engine.create();
+    this.physics_engine.world.gravity.scale = 0;
   }
 }
