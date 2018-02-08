@@ -49,6 +49,7 @@
     </div>
 
     <script type="text/javascript" src="src/libs/matter.js"></script>
+    <script type="text/javascript" src="src/libs/matter_collision_events.js"></script>
     <script type="text/javascript" src="src/util.js"></script>
     <script type="text/javascript" src="src/util/vector.js"></script>
     <script type="text/javascript" src="src/meter.js"></script>
@@ -67,12 +68,50 @@
       const game = new Game("game_canvas");
       game.set_fps_meter("fps_meter");
 
+      class Floor extends Entity {
+        constructor(){
+          super(0, 340, 1280, 20);
+          this.physics = Matter.Bodies.rectangle(0, 340, 1280, 20, {isStatic: true});
+          this.physics.entity = this;
+          this.is_floor = true;
+          this.physics.onCollide((pair) => this.collide(pair));
+        }
+        collide(pair){          
+          if(pair.bodyA.entity.is_enemy || pair.bodyB.entity.is_enemy){
+            let enemy = pair.bodyA.entity.is_enemy ? pair.bodyA.entity : pair.bodyB.entity;
+            let floor = pair.bodyA.entity.is_enemy ? pair.bodyB.entity : pair.bodyA.entity;
+            game.scene.restart();
+          }
+        }
+      }
+
+      class Enemy extends Entity {
+        constructor(x, y){
+          super(x, y, 60, 30);
+          this.physics = Matter.Bodies.rectangle(x, y, 60, 30, {frictionAir: 0});
+          Matter.Body.setVelocity(this.physics, {x: 0, y: 1});
+          this.physics.entity = this;
+          this.is_enemy = true;
+          this.damage = 0;
+        }
+        update(dt){
+          super.update(dt);
+          this.x = this.physics.position.x;
+          this.y = this.physics.position.y;
+          this.angle = this.physics.angle;
+          if(this.damage >= 2) this.dead = true;
+        }
+      }
+
       class Bullet extends Entity {
         constructor(x, y){
-          super(x, y, 5, 30);
+          super(x, y, 21, 21);
           this.age = 0;
-          this.physics = Matter.Bodies.rectangle(this.x, this.y, this.width, this.height);
-          Matter.Body.setVelocity(this.physics, {x: 0, y: -25});
+          this.physics = Matter.Bodies.rectangle(x, y, 21, 21, {frictionAir: 0});
+          Matter.Body.setVelocity(this.physics, {x: 0, y: -29});
+          this.physics.onCollide((pair) => this.collide(pair));
+          this.physics.entity = this;
+          this.is_bullet = true;
         }
         update(dt){
           super.update(dt);
@@ -84,79 +123,71 @@
             this.dead = true;
           }
         }
+        collide(pair){
+          if(pair.bodyA.entity.is_enemy || pair.bodyB.entity.is_enemy){
+            let enemy = pair.bodyA.entity.is_enemy ? pair.bodyA.entity : pair.bodyB.entity;
+            let bullet = pair.bodyA.entity.is_enemy ? pair.bodyB.entity : pair.bodyA.entity;
+            enemy.damage += 1;
+            bullet.dead = true;
+          }
+        }
       }
 
-      class Fighter extends Entity {
+      class Player extends Entity {
         constructor(){
-          super(0, 250, 40, 30);
-          this.move_left = false;
-          this.move_right = false;
+          super(0, 290, 100, 50);
+          this.physics = Matter.Bodies.rectangle(0, 290, 100, 50, {isStatic: true});
+          this.left = false;
+          this.right = false;
           this.shooting = false;
           this.time_since_last_shot = 0;
-        }
-
-        set_move_left(enabled){
-          this.move_left = enabled;
-        }
-        set_move_right(enabled){
-          this.move_right = enabled;
+          this.physics.entity = this;
+          this.is_player = true;
         }
         update(dt){
           super.update(dt);
-          if(this.move_left)
-            this.x -= dt*300;
-          if(this.move_right)
-            this.x += dt*300;
+          if(this.left)
+            this.x -= dt * 300;
+          if(this.right)
+            this.x += dt * 300;
+          Matter.Body.setPosition(this.physics, {x: this.x, y: this.y});
           if(this.shooting){
             if(this.time_since_last_shot == 0){              
-              game.scene.add(new Bullet(this.x, this.y-20));
+              game.scene.add(new Bullet(this.x, this.y));
             }
             this.time_since_last_shot += dt;
-            if(this.time_since_last_shot >= 0.1){
+            if(this.time_since_last_shot >= 0.05){
               this.time_since_last_shot = 0;
             }
           }
         }
-        shoot(enabled){
-          this.shooting = enabled;
-        }
       }
-
-
-      class Enemy extends Entity {
-        constructor(x, y){
-          super(0, y, 200, 20);
-          this.physics = Matter.Bodies.rectangle(this.x, this.y, this.width, this.height);
-        }
-        update(dt){
-          super.update(dt);
-          this.x = this.physics.position.x;
-          this.y = this.physics.position.y;
-          this.angle = this.physics.angle;
-        }
-      }
-
-
       game.set_scene({
         world: new World(1280, 720),
-
         setup: function(){
-          this.fighter = new Fighter();
-          this.add(this.fighter);
-          this.enemy = new Enemy();
-          this.add(this.enemy);
+          this.restart();
         },
-
-        handle_key: function(event, pressed){
+        restart: function(){
+          this.world.layers = [];
+          for(var i = 0; i < 9; i++){
+            for(var j = 0; j < 9; j++){
+              this.add(new Enemy(300-i*75, 0-j*45));
+            }
+          }
+          this.player = new Player();
+          this.add(this.player);
+          this.floor = new Floor();
+          this.add(this.floor);
+        },
+        handle_key(event, pressed){
           if(event.key === "ArrowLeft")
-            this.fighter.set_move_left(pressed);
+            this.player.left = pressed;
           if(event.key === "ArrowRight")
-            this.fighter.set_move_right(pressed);
+            this.player.right = pressed;
           if(event.key === " ")
-            this.fighter.shoot(pressed);
-        }
+            this.player.shooting = pressed;
+        },
       });
-
       game.run();
     </script>
 
