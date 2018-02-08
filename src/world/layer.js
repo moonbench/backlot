@@ -76,6 +76,6 @@ class Layer {
   enable_physics(){
     this.physics = true;
     this.physics_engine = Matter.Engine.create();
-    this.physics_engine.world.gravity.scale = 0;
+    this.physics_engine.world.gravity.scale = 0.00001;
   }
 }
