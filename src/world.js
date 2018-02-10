@@ -4,10 +4,14 @@ class World {
   constructor(width, height){
     this.width = width;
     this.height = height;
-    this.layers = [];
     this.allow_negative = false;
     this.debug_level = 1;
     this.add = this.add.bind(this);
+    this.reset();
+  }
+
+  reset(){
+    this.layers = [];
   }
 
   update(dt){

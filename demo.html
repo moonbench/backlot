@@ -95,10 +95,9 @@
           this.damage = 0;
         }
         update(dt){
-          super.update(dt);
-          this.x = this.physics.position.x;
-          this.y = this.physics.position.y;
-          this.angle = this.physics.angle;
+          super.update(dt);          
+          this.y += dt*30;
+          Matter.Body.setPosition(this.physics, {x: this.x, y: this.y});
           if(this.damage >= 2) this.dead = true;
         }
       }
@@ -107,17 +106,15 @@
         constructor(x, y){
           super(x, y, 21, 21);
           this.age = 0;
-          this.physics = Matter.Bodies.rectangle(x, y, 21, 21, {frictionAir: 0});
-          Matter.Body.setVelocity(this.physics, {x: 0, y: -29});
+          this.physics = Matter.Bodies.rectangle(x, y, 21, 21, {frictionAir: 0, isStatic: true});
           this.physics.onCollide((pair) => this.collide(pair));
           this.physics.entity = this;
           this.is_bullet = true;
         }
         update(dt){
           super.update(dt);
-          this.x = this.physics.position.x;
-          this.y = this.physics.position.y;
-          this.angle = this.physics.angle;
+          this.y -= dt*1000;
+          Matter.Body.setPosition(this.physics, {x: this.x, y: this.y});
           this.age += dt;
           if(this.age >= 1){
             this.dead = true;
@@ -156,7 +153,7 @@
               game.scene.add(new Bullet(this.x, this.y));
             }
             this.time_since_last_shot += dt;
-            if(this.time_since_last_shot >= 0.05){
+            if(this.time_since_last_shot >= 0.1){
               this.time_since_last_shot = 0;
             }
           }
@@ -167,11 +164,35 @@
         setup: function(){
           this.restart();
         },
+        update: function(dt){
+          if(this.going_left)
+            this.offset -= dt;
+          else
+            this.offset += dt;
+          if(this.offset > 2){
+            this.offset = 2;
+            this.going_left = true;
+          }
+          if(this.offset < -2){
+            this.offset = -2;
+            this.going_left = false;
+          }
+          this.enemies.forEach((row) => {
+            row.forEach((enemy) => {
+              enemy.x += dt * (this.going_left ? -50 : 50);
+            })
+          })
+        },
         restart: function(){
-          this.world.layers = [];
+          this.world.reset();
+          this.offset = 0;
+          this.going_left = false;
+          this.enemies = [];
           for(var i = 0; i < 9; i++){
+            this.enemies.push([]);
             for(var j = 0; j < 9; j++){
-              this.add(new Enemy(300-i*75, 0-j*45));
+              this.enemies[i].push(new Enemy(500-i*125, -100-j*60));
+              this.add(this.enemies[i][j]);
             }
           }
           this.player = new Player();
