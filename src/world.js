@@ -40,7 +40,7 @@ class World {
   }
   add(entity, depth=100){
     const layer = this.find_or_create_world_layer(depth);
-    if(entity.physics && !layer.physics)
+    if(entity.physics_body && !layer.physics)
       layer.enable_physics();
     layer.add(entity);
   }

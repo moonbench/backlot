@@ -68,144 +68,194 @@
       const game = new Game("game_canvas");
       game.set_fps_meter("fps_meter");
 
-      class Floor extends Entity {
-        constructor(){
-          super(0, 340, 1280, 20);
-          this.physics = Matter.Bodies.rectangle(0, 340, 1280, 20, {isStatic: true});
-          this.physics.entity = this;
-          this.is_floor = true;
-          this.physics.onCollide((pair) => this.collide(pair));
-        }
-        collide(pair){          
-          if(pair.bodyA.entity.is_enemy || pair.bodyB.entity.is_enemy){
-            let enemy = pair.bodyA.entity.is_enemy ? pair.bodyA.entity : pair.bodyB.entity;
-            let floor = pair.bodyA.entity.is_enemy ? pair.bodyB.entity : pair.bodyA.entity;
-            game.scene.restart();
-          }
-        }
-      }
+      game.add_image("crate.png");
+      game.add_image("laser1.png");
+      game.add_image("ship1.png");
+      game.add_audio("explosion_crate.mp3");
+      game.add_audio("explosion_player.mp3");
+      game.add_audio("laser1.mp3");
 
-      class Enemy extends Entity {
-        constructor(x, y){
-          super(x, y, 60, 30);
-          this.physics = Matter.Bodies.rectangle(x, y, 60, 30, {frictionAir: 0});
-          Matter.Body.setVelocity(this.physics, {x: 0, y: 1});
-          this.physics.entity = this;
-          this.is_enemy = true;
-          this.damage = 0;
-        }
-        update(dt){
-          super.update(dt);          
-          this.y += dt*30;
-          Matter.Body.setPosition(this.physics, {x: this.x, y: this.y});
-          if(this.damage >= 2) this.dead = true;
-        }
-      }
-
-      class Bullet extends Entity {
-        constructor(x, y){
-          super(x, y, 21, 21);
+      class Bullet extends Sprite {
+        constructor(x, y, angle){
+          super(game.images["laser1.png"], x, y, 20, 10, angle);
+          this.add_physics_body({frictionAir: 0});
+          this.set_velocity(new Vector(this.angle, 30));
           this.age = 0;
-          this.physics = Matter.Bodies.rectangle(x, y, 21, 21, {frictionAir: 0, isStatic: true});
-          this.physics.onCollide((pair) => this.collide(pair));
-          this.physics.entity = this;
           this.is_bullet = true;
+          this.physics_body.onCollide((pair) => this.collide(pair));
         }
         update(dt){
           super.update(dt);
-          this.y -= dt*1000;
-          Matter.Body.setPosition(this.physics, {x: this.x, y: this.y});
           this.age += dt;
-          if(this.age >= 1){
+          if(this.age >= 0.63){
             this.dead = true;
           }
         }
         collide(pair){
-          if(pair.bodyA.entity.is_enemy || pair.bodyB.entity.is_enemy){
-            let enemy = pair.bodyA.entity.is_enemy ? pair.bodyA.entity : pair.bodyB.entity;
-            let bullet = pair.bodyA.entity.is_enemy ? pair.bodyB.entity : pair.bodyA.entity;
-            enemy.damage += 1;
-            bullet.dead = true;
+          this.dead = true;
+        }
+      }
+
+      class Crate extends Sprite {
+        constructor(x, y, width, height, angle){
+          super(game.images["crate.png"], x, y, width, height, angle);
+          this.add_physics_body({frictionAir: 0});
+          this.set_velocity(new Vector(Math.random()*Math.PI*2, 1+Math.random()*5));
+          this.is_crate = true;
+          this.physics_body.onCollide((pair) => this.collide(pair));
+        }
+        collide(pair){
+          let other = pair.bodyA.entity == this ? pair.bodyB : pair.bodyA;
+          if(other.entity.is_bullet){
+            game.audio["explosion_crate.mp3"].play();
+            this.destruct();
+          }
+          if(other.entity.is_player){
+            game.audio["explosion_player.mp3"].play();
+            game.scene.reset();
+          }
+        }
+        destruct(){
+          this.dead = true;
+          if(this.width > 35 && this.height > 35){
+            game.scene.add_crate(this.x + 5, this.y + 5, this.width/2, this.height/2);
+            game.scene.add_crate(this.x - 5, this.y + 5, this.width/2, this.height/2);
+            game.scene.add_crate(this.x + 5, this.y - 5, this.width/2, this.height/2);
+            game.scene.add_crate(this.x - 5, this.y - 5, this.width/2, this.height/2);
           }
         }
       }
 
-      class Player extends Entity {
-        constructor(){
-          super(0, 290, 100, 50);
-          this.physics = Matter.Bodies.rectangle(0, 290, 100, 50, {isStatic: true});
-          this.left = false;
-          this.right = false;
-          this.shooting = false;
-          this.time_since_last_shot = 0;
-          this.physics.entity = this;
+      class Player extends Sprite {
+        constructor(x, y){
+          super(game.images["ship1.png"], x, y, 80, 50);
+          this.add_physics_body({frictionAir: 0});
+          this.turn_left = false;
+          this.turn_right = false;
+          this.forward = false;
+          this.reverse = false;
+          this.rotation_velocity = 0;
           this.is_player = true;
         }
         update(dt){
           super.update(dt);
-          if(this.left)
-            this.x -= dt * 300;
-          if(this.right)
-            this.x += dt * 300;
-          Matter.Body.setPosition(this.physics, {x: this.x, y: this.y});
-          if(this.shooting){
-            if(this.time_since_last_shot == 0){              
-              game.scene.add(new Bullet(this.x, this.y));
-            }
-            this.time_since_last_shot += dt;
-            if(this.time_since_last_shot >= 0.1){
-              this.time_since_last_shot = 0;
-            }
+          let motion_vector = new Vector(0, 0);
+          if(this.forward){
+            motion_vector.add(this.angle, dt/100);
           }
+          if(this.reverse){
+            motion_vector.add(this.angle+Math.PI, dt/100);
+          }
+          if(this.left){
+            motion_vector.add(this.angle-Math.PI/2, dt/100);
+          }
+          if(this.right){
+            motion_vector.add(this.angle+Math.PI/2, dt/100);
+          }
+          if(this.turn_left){
+            this.rotation_velocity -= dt/10;
+          }
+          if(this.turn_right){
+            this.rotation_velocity += dt/10;
+          }
+          this.angle += this.rotation_velocity;
+          this.apply_force(motion_vector);
+          Matter.Body.setAngle(this.physics_body, this.angle);
         }
       }
       game.set_scene({
         world: new World(1280, 720),
         setup: function(){
-          this.restart();
+          this.reset();
+          this.highest_num_crates = 0;
+        },
+        reset: function(){
+          this.num_crates = 1;
+          this.time_between_shots = 0.09;
+          this.setup_world();
+        },
+        setup_world: function(){
+          this.world.reset();
+          if(this.num_crates > this.highest_num_crates) this.highest_num_crates = this.num_crates;
+          this.crates = [];
+          this.bullets = [];
+          for(var i = 0; i < this.num_crates; i++){
+            this.add_crate();
+          }
+          this.player = new Player(0, 0);
+          this.add(this.player);
+
+          this.last_shot = this.time_between_shots;
         },
         update: function(dt){
-          if(this.going_left)
-            this.offset -= dt;
-          else
-            this.offset += dt;
-          if(this.offset > 2){
-            this.offset = 2;
-            this.going_left = true;
+          if(this.crates.length < 1){
+            this.num_crates += 1;
+            this.setup_world();
           }
-          if(this.offset < -2){
-            this.offset = -2;
-            this.going_left = false;
+          this.crates = this.crates.map((crate) => {
+            this.wrap(crate);
+            return crate;
+          }).filter((crate) => {
+            return crate.dead == false
+          });
+
+          this.bullets = this.bullets.map((bullet) => {
+            this.wrap(bullet);
+            return bullet;
+          }).filter((bullet) => {
+            return bullet.dead == false
+          });
+
+          this.wrap(this.player);
+          if(this.last_shot < this.time_between_shots){
+            this.last_shot += dt;
           }
-          this.enemies.forEach((row) => {
-            row.forEach((enemy) => {
-              enemy.x += dt * (this.going_left ? -50 : 50);
-            })
-          })
+          if(this.last_shot >= this.time_between_shots && this.player.shooting){
+            this.shoot();
+            this.last_shot = 0;
+          }
         },
-        restart: function(){
-          this.world.reset();
-          this.offset = 0;
-          this.going_left = false;
-          this.enemies = [];
-          for(var i = 0; i < 9; i++){
-            this.enemies.push([]);
-            for(var j = 0; j < 9; j++){
-              this.enemies[i].push(new Enemy(500-i*125, -100-j*60));
-              this.add(this.enemies[i][j]);
-            }
-          }
-          this.player = new Player();
-          this.add(this.player);
-          this.floor = new Floor();
-          this.add(this.floor);
+        render(ctx){
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.font="30px Arial";
+          ctx.strokeText("Level: " + this.num_crates, 100, 100);
+          if(this.highest_num_crates > this.num_crates)
+            ctx.strokeText("Highest: " + this.highest_num_crates, 100, 130);
+        },
+        add_crate(x=420*Math.cos(Math.random()*Math.PI*2), y=420*Math.sin(Math.random()*Math.PI*2), width=120+Math.random()*50, height=120+Math.random()*50){
+          console.log(x + " " + y);
+          let crate = new Crate(x, y, width, height, Math.random()*Math.PI*2);
+          this.crates.push(crate);
+          this.add(crate);
+        },
+        shoot: function(){
+          let vec = new Vector(this.player.angle, 25);
+          let bullet = new Bullet(vec.x_after(this.player.x, 1), vec.y_after(this.player.y, 1), this.player.angle)
+          this.bullets.push(bullet);
+          this.add(bullet);
+          this.game.audio["laser1.mp3"].play();
+        },
+        wrap: function(entity){
+          if(entity.x > 640) entity.x = -640 + (entity.x-640);
+          if(entity.y > 360) entity.y = -360 + (entity.y-360);
+          if(entity.x < -640) entity.x = 640 - (entity.x+640);
+          if(entity.y < -360) entity.y = 360 - (entity.y+360);
+          Matter.Body.setPosition(entity.physics_body, {x: entity.x, y: entity.y});
         },
         handle_key(event, pressed){
-          if(event.key === "ArrowLeft")
+          if(event.key == "w")
+            this.player.forward = pressed;
+          if(event.key == "s")
+            this.player.reverse = pressed;
+          if(event.key == "q")
+            this.player.turn_left = pressed;
+          if(event.key == "e")
+            this.player.turn_right = pressed;
+          if(event.key == "a")
             this.player.left = pressed;
-          if(event.key === "ArrowRight")
+          if(event.key == "d")
             this.player.right = pressed;
-          if(event.key === " ")
+          if(event.key == " ")
             this.player.shooting = pressed;
         },
       });

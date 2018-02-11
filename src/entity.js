@@ -8,7 +8,7 @@ class Entity {
     this.height = height;
     this.angle = angle;
     this.dead = false;
-    this.debug_level = 3;
+    this.debug_level = 0;
     this.anchor = null;
   }
 
@@ -18,6 +18,9 @@ class Entity {
     this.reset();
     this.normalize_if_dirty();
     this.follow_anchor();
+    if(this.physics_body){
+      this.align_with_physics_body();
+    }
   }
 
   anchor_to(entity){
@@ -157,5 +160,32 @@ class Entity {
 
     if(this.debug_level < 4) return;
     this.render_info_text(ctx);
+  }
+
+  add_physics_body(options = undefined, x = this.x, y = this.y, width = this.width, height=this.height, angle = this.angle){
+    this.physics_body = Matter.Bodies.rectangle(x, y, width, height, options);
+    this.physics_body.entity = this;
+    if(angle != 0) Matter.Body.rotate(this.physics_body, angle);
+  }
+
+  align_with_physics_body(){
+    this.x = this.physics_body.position.x;
+    this.y = this.physics_body.position.y;
+    this.angle = this.physics_body.angle;
+  }
+
+  set_velocity(vector){
+    Matter.Body.setVelocity(
+      this.physics_body,
+      {x: vector.x_after(0, 1), y: vector.y_after(0, 1)}
+    );
+  }
+
+  apply_force(vector){
+    Matter.Body.applyForce(
+      this.physics_body,
+      this.physics_body.position,
+      {x: vector.x_after(0, 1), y: vector.y_after(0, 1)}
+    );
   }
 }
