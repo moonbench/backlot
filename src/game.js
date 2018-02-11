@@ -23,6 +23,9 @@ class Game {
     if(scene.update){
       this.engine.update_function = scene.update.bind(scene);
     }
+    if(scene.render){
+      this.engine.render_function = scene.render.bind(scene);
+    }
     if(scene.handle_mouse_button){
       this.engine.handle_mouse_button = scene.handle_mouse_button.bind(scene);
     }

@@ -19,8 +19,8 @@ class Layer {
       entity.update(dt);
       return entity;
     }).filter((entity) => {
-      if(entity.dead && this.physics_engine){
-        Matter.World.remove(this.physics_engine.world, entity.physics);
+      if(entity.dead && this.physics_engine && entity.physics_body){
+        Matter.World.remove(this.physics_engine.world, entity.physics_body);
       }
       return entity.dead == false;
     });
@@ -70,12 +70,12 @@ class Layer {
   add(entity){
     entity.layer = this;
     this.pending_addition.push(entity);
-    if(this.physics_engine && entity.physics) Matter.World.add(this.physics_engine.world, entity.physics);
+    if(this.physics_engine && entity.physics_body) Matter.World.add(this.physics_engine.world, entity.physics_body);
   }
 
   enable_physics(){
     this.physics = true;
     this.physics_engine = Matter.Engine.create();
-    this.physics_engine.world.gravity.scale = 0.00001;
+    this.physics_engine.world.gravity.scale = 0;
   }
 }

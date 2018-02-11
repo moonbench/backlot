@@ -77,7 +77,8 @@ class Engine {
     this.ctx.save();
     this.ctx.scale(this.scale, this.scale);
     if(this.world) this.world.render(this.ctx);
-    this.ctx.restore();
+    this.ctx.restore();    
+    if(this.render_function) this.render_function(this.ctx);
 
     if(this.cursor) this.cursor.render(this.ctx);
 
