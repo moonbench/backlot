@@ -42,12 +42,11 @@ class Viewport {
     if(entity) this.tracking = entity;
     const limits = this.visible_world_limits();
 
-    const offsets = [0,0];
-    if(this.tracking.x > limits[1][0]-this.width/6) offsets[0] += 10;
-    if(this.tracking.x < limits[0][0]+this.width/6) offsets[0] -= 10;
-    if(this.tracking.y > limits[1][1]-this.height/6) offsets[1] += 10;
-    if(this.tracking.y < limits[0][1]+this.height/6) offsets[1] -= 10;
-    this.center_on(this.center_world_x+offsets[0], this.center_world_y+offsets[1]);
+    const adjustment_vector = new Vector(
+      Math.atan2((this.tracking.y-this.center_world_y), (this.tracking.x-this.center_world_x)),
+      Math.sqrt(Math.pow(this.tracking.y-this.center_world_y, 2) + Math.pow(this.tracking.x-this.center_world_x, 2))
+    );
+    this.center_on(adjustment_vector.x_after(this.center_world_x, 0.1), adjustment_vector.y_after(this.center_world_y, 0.1));
   }
   set_limits(min_x, min_y, max_x, max_y){
     this.limits = {

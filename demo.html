@@ -47,6 +47,11 @@
         <canvas id="game_canvas" width="1280" height="720"></canvas>
       </div>
     </div>
+    <div>
+      <ul>
+        <li>W, A, S, D to move</li>
+      </ul>
+    </div>
 
     <script type="text/javascript" src="src/libs/matter.js"></script>
     <script type="text/javascript" src="src/libs/matter_collision_events.js"></script>
@@ -68,195 +73,54 @@
       const game = new Game("game_canvas");
       game.set_fps_meter("fps_meter");
 
-      game.add_image("crate.png");
-      game.add_image("laser1.png");
-      game.add_image("ship1.png");
-      game.add_audio("explosion_crate.mp3");
-      game.add_audio("explosion_player.mp3");
-      game.add_audio("laser1.mp3");
-
-      class Bullet extends Sprite {
-        constructor(x, y, angle){
-          super(game.images["laser1.png"], x, y, 20, 10, angle);
-          this.add_physics_body({frictionAir: 0});
-          this.set_velocity(new Vector(this.angle, 30));
-          this.age = 0;
-          this.is_bullet = true;
-          this.physics_body.onCollide((pair) => this.collide(pair));
-        }
-        update(dt){
-          super.update(dt);
-          this.age += dt;
-          if(this.age >= 0.63){
-            this.dead = true;
-          }
-        }
-        collide(pair){
-          this.dead = true;
-        }
-      }
-
-      class Crate extends Sprite {
+      class Wall extends Entity {
         constructor(x, y, width, height, angle){
-          super(game.images["crate.png"], x, y, width, height, angle);
-          this.add_physics_body({frictionAir: 0});
-          this.set_velocity(new Vector(Math.random()*Math.PI*2, 1+Math.random()*5));
-          this.is_crate = true;
-          this.physics_body.onCollide((pair) => this.collide(pair));
-        }
-        collide(pair){
-          let other = pair.bodyA.entity == this ? pair.bodyB : pair.bodyA;
-          if(other.entity.is_bullet){
-            game.audio["explosion_crate.mp3"].play();
-            this.destruct();
-          }
-          if(other.entity.is_player){
-            game.audio["explosion_player.mp3"].play();
-            game.scene.reset();
-          }
-        }
-        destruct(){
-          this.dead = true;
-          if(this.width > 35 && this.height > 35){
-            game.scene.add_crate(this.x + 5, this.y + 5, this.width/2, this.height/2);
-            game.scene.add_crate(this.x - 5, this.y + 5, this.width/2, this.height/2);
-            game.scene.add_crate(this.x + 5, this.y - 5, this.width/2, this.height/2);
-            game.scene.add_crate(this.x - 5, this.y - 5, this.width/2, this.height/2);
-          }
+          super(x, y, width, height, angle);
+          this.add_physics_body({isStatic: true});
         }
       }
 
-      class Player extends Sprite {
+      class Player extends Entity {
         constructor(x, y){
-          super(game.images["ship1.png"], x, y, 80, 50);
-          this.add_physics_body({frictionAir: 0});
-          this.turn_left = false;
-          this.turn_right = false;
-          this.forward = false;
-          this.reverse = false;
-          this.rotation_velocity = 0;
-          this.is_player = true;
+          super(x, y, 32, 32);
+          this.add_physics_body();
         }
         update(dt){
           super.update(dt);
-          let motion_vector = new Vector(0, 0);
-          if(this.forward){
-            motion_vector.add(this.angle, dt/100);
-          }
-          if(this.reverse){
-            motion_vector.add(this.angle+Math.PI, dt/100);
-          }
-          if(this.left){
-            motion_vector.add(this.angle-Math.PI/2, dt/100);
-          }
-          if(this.right){
-            motion_vector.add(this.angle+Math.PI/2, dt/100);
-          }
-          if(this.turn_left){
-            this.rotation_velocity -= dt/10;
-          }
-          if(this.turn_right){
-            this.rotation_velocity += dt/10;
-          }
-          this.angle += this.rotation_velocity;
-          this.apply_force(motion_vector);
-          Matter.Body.setAngle(this.physics_body, this.angle);
+          let x_offset = 0;
+          let y_offset = 0;
+          if(this.up) y_offset -= dt*500;
+          if(this.down) y_offset += dt*500;
+          if(this.left) x_offset -= dt*500;
+          if(this.right) x_offset += dt*500;
+          Matter.Body.setPosition(this.physics_body, {x: this.x+x_offset, y: this.y+y_offset});
         }
       }
       game.set_scene({
-        world: new World(1280, 720),
+        world: new World(1920*3, 1080*3),
         setup: function(){
-          this.reset();
-          this.highest_num_crates = 0;
-        },
-        reset: function(){
-          this.num_crates = 1;
-          this.time_between_shots = 0.09;
-          this.setup_world();
-        },
-        setup_world: function(){
-          this.world.reset();
-          if(this.num_crates > this.highest_num_crates) this.highest_num_crates = this.num_crates;
-          this.crates = [];
-          this.bullets = [];
-          for(var i = 0; i < this.num_crates; i++){
-            this.add_crate();
-          }
           this.player = new Player(0, 0);
           this.add(this.player);
-
-          this.last_shot = this.time_between_shots;
-        },
-        update: function(dt){
-          if(this.crates.length < 1){
-            this.num_crates += 1;
-            this.setup_world();
+          for(var i = 0; i < 10; i++){
+            for(var j = 0; j < 10; j++){
+              for(var l = 0; l < 3; l++){
+                this.add(new Wall(-1024+(j*256), 0, 64, 512), 90+10*l);
+              }
+              this.add(new Wall(-1024+(j*256), 0, 64, 512), 25);
+              this.add(new Wall(-1024+(j*256), 0, 64, 512), 200);
+            }
           }
-          this.crates = this.crates.map((crate) => {
-            this.wrap(crate);
-            return crate;
-          }).filter((crate) => {
-            return crate.dead == false
-          });
-
-          this.bullets = this.bullets.map((bullet) => {
-            this.wrap(bullet);
-            return bullet;
-          }).filter((bullet) => {
-            return bullet.dead == false
-          });
-
-          this.wrap(this.player);
-          if(this.last_shot < this.time_between_shots){
-            this.last_shot += dt;
-          }
-          if(this.last_shot >= this.time_between_shots && this.player.shooting){
-            this.shoot();
-            this.last_shot = 0;
-          }
-        },
-        render(ctx){
-          ctx.strokeStyle = "#FFFFFF";
-          ctx.font="30px Arial";
-          ctx.strokeText("Level: " + this.num_crates, 100, 100);
-          if(this.highest_num_crates > this.num_crates)
-            ctx.strokeText("Highest: " + this.highest_num_crates, 100, 130);
-        },
-        add_crate(x=420*Math.cos(Math.random()*Math.PI*2), y=420*Math.sin(Math.random()*Math.PI*2), width=120+Math.random()*50, height=120+Math.random()*50){
-          console.log(x + " " + y);
-          let crate = new Crate(x, y, width, height, Math.random()*Math.PI*2);
-          this.crates.push(crate);
-          this.add(crate);
-        },
-        shoot: function(){
-          let vec = new Vector(this.player.angle, 25);
-          let bullet = new Bullet(vec.x_after(this.player.x, 1), vec.y_after(this.player.y, 1), this.player.angle)
-          this.bullets.push(bullet);
-          this.add(bullet);
-          this.game.audio["laser1.mp3"].play();
-        },
-        wrap: function(entity){
-          if(entity.x > 640) entity.x = -640 + (entity.x-640);
-          if(entity.y > 360) entity.y = -360 + (entity.y-360);
-          if(entity.x < -640) entity.x = 640 - (entity.x+640);
-          if(entity.y < -360) entity.y = 360 - (entity.y+360);
-          Matter.Body.setPosition(entity.physics_body, {x: entity.x, y: entity.y});
+          this.add(new Wall(512, 0, 512+64, 512), 110);
+          this.add(new Wall(512, 0, 512+64, 512), 90);
+          this.add(new Wall(-512, 0, 512+64, 512), 110);
+          this.add(new Wall(-512, 0, 512+64, 512), 90);
+          this.game.engine.viewport.track(this.player);
         },
         handle_key(event, pressed){
-          if(event.key == "w")
-            this.player.forward = pressed;
-          if(event.key == "s")
-            this.player.reverse = pressed;
-          if(event.key == "q")
-            this.player.turn_left = pressed;
-          if(event.key == "e")
-            this.player.turn_right = pressed;
-          if(event.key == "a")
-            this.player.left = pressed;
-          if(event.key == "d")
-            this.player.right = pressed;
-          if(event.key == " ")
-            this.player.shooting = pressed;
+          if(event.key == "w") this.player.up = pressed;
+          if(event.key == "s") this.player.down = pressed;
+          if(event.key == "a") this.player.left = pressed;
+          if(event.key == "d") this.player.right = pressed;
         },
       });
       game.run();

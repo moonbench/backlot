@@ -10,7 +10,6 @@ class Layer {
   }
 
   update(dt){
-    if(this.quadtree) this.quadtree.reset();
     const pending = this.pending_addition;
     if(this.physics_engine) Matter.Engine.update(this.physics_engine, dt*1000);
     this.pending_addition = [];
@@ -42,28 +41,33 @@ class Layer {
   }
 
   render(ctx){
+    const viewport = this.world.engine.viewport;
     ctx.save();
-    const offset = this.world.engine.viewport.world_to_viewport(0,0,this.depth);
+    const offset = viewport.world_to_viewport(0,0,this.depth);
     ctx.translate(offset[0], offset[1]);
+    const scale = this.depth/100;
+    ctx.scale(scale, scale);
+    
     if(this.debug_level >= 1){
       ctx.strokeStyle = "rgba(255,255,255,0.5)";
       this.render_border(ctx);
       this.render_axis(ctx);
     }
 
-    const world_limits = this.world.engine.viewport.visible_world_limits();
     this.entities.forEach((entity) => {
-      if(entity.x + entity.max.x < world_limits[0][0] ||
-         entity.y + entity.max.y < world_limits[0][1] ||
-         entity.x + entity.min.x > world_limits[1][0] ||
-         entity.y + entity.min.y > world_limits[1][1])
+      const entity_offset = viewport.world_to_viewport(entity.x, entity.y, this.depth);
+      if(entity_offset[0] + entity.max.x*scale < viewport.left_offset ||
+         entity_offset[1] + entity.max.y*scale < viewport.top_offset ||
+         entity_offset[0] + entity.min.x*scale > viewport.width+viewport.left_offset ||
+         entity_offset[1] + entity.min.y*scale > viewport.height+viewport.top_offset)
         return;
 
-      entity.pre_render(this.world.engine.viewport, ctx);
+      ctx.save();
+      ctx.translate(entity.x, entity.y);
+      ctx.rotate(entity.angle);
       entity.render(ctx);
-      entity.post_render(ctx);
+      ctx.restore();
     });
-    if(this.quadtree) this.quadtree.render(ctx);
     ctx.restore();
   }
 
