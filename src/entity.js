@@ -8,7 +8,7 @@ class Entity {
     this.height = height;
     this.angle = angle;
     this.dead = false;
-    this.debug_level = 0;
+    this.debug_level = 2;
     this.anchor = null;
   }
 
@@ -84,21 +84,11 @@ class Entity {
     return this;
   }
 
-  pre_render(viewport, ctx){
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.angle);
-  }
-
-  post_render(ctx){
+  render(ctx){
     if(this.debug_level > 0){
       ctx.rotate(0-this.angle);
       this.render_debug(ctx);
     }
-    ctx.restore();
-  }
-
-  render(ctx){
     if(this.debug_level<1) return;
     this.render_box_outline(ctx);
   }
