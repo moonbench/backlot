@@ -6,7 +6,7 @@ class Layer {
     this.world = world;
     this.entities = [];
     this.pending_addition = [];
-    this.debug_level = 3;
+    this.debug_level = 1;
   }
 
   update(dt){
@@ -46,8 +46,8 @@ class Layer {
     const offset = viewport.world_to_viewport(0,0,this.depth);
     ctx.translate(offset[0], offset[1]);
     const scale = this.depth/100;
-    ctx.scale(scale, scale);
-    
+    if(scale != 1) ctx.scale(scale, scale);
+
     if(this.debug_level >= 1){
       ctx.strokeStyle = "rgba(255,255,255,0.5)";
       this.render_border(ctx);
