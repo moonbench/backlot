@@ -9,7 +9,7 @@ class Engine {
 
     this.set_canvas(canvas);
     this.bind_mouse();
-    this.set_fps(30);
+    this.set_fps(60);
     this.set_cursor(new Cursor(canvas.width/2, canvas.height/2, this.canvas));
     this.set_scale(1);
   }
@@ -27,13 +27,15 @@ class Engine {
     });
     this.canvas.addEventListener("mousemove", (event) => {
       if(this.cursor) this.cursor.handle_mouse_move(event);
-      if(this.handle_mouse_move) this.handle_mouse_move(event)
+      if(this.handle_mouse_move) this.handle_mouse_move(event);
     });
     this.canvas.addEventListener("mousedown", (event) => {
-      if(this.handle_mouse_button) this.handle_mouse_button(event, true, this.cursor)
+      if(this.handle_mouse_button) this.click(event, true, this.cursor);
+      if(this.world) this.world.click(event, true, this.cursor);
     });
     this.canvas.addEventListener("mouseup", (event) => {
-      if(this.handle_mouse_button) this.handle_mouse_button(event, false, this.cursor)
+      if(this.handle_mouse_button) this.click(event, false, this.cursor);
+      if(this.world) this.world.click(event, false, this.cursor)
     });
   }
 
