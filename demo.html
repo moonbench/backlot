@@ -48,9 +48,6 @@
       </div>
     </div>
     <div>
-      <ul>
-        <li>W, A, S, D to move</li>
-      </ul>
     </div>
 
     <script type="text/javascript" src="src/libs/matter.js"></script>
@@ -71,113 +68,165 @@
 
     <script type="text/javascript">
       const game = new Game("game_canvas");
-      game.set_fps_meter("fps_meter");
+      //game.set_fps_meter("fps_meter");
 
-      class Wall extends Entity {
-        constructor(x, y, width, height, angle){
-          super(x, y, width, height, angle);
-          this.add_physics_body({isStatic: true});
-        }
-        render(ctx){
-          ctx.fillStyle = "#080812";
-          ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
-          super.render(ctx);
-        }
-      }
+      let colors = [
+        "#990000",
+        "#009900",
+        "#000099",
+        "#990099",
+        "#009999",
+        "#999900",
+      ];
 
-      class Floor extends Entity {
-        constructor(x, y, width, height, angle){
-          super(x, y, width, height, angle);
-        }
-        render(ctx){
-          ctx.fillStyle = "#050509";
-          ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
-          super.render(ctx);
-        }
-      }
+      let BLOCKSIZE = 64;
+      let WIDTH = 10;
 
-      class Light extends Entity {
-        constructor(x, y, width, height, angle){
-          super(x, y, width, height, angle);
-        }
-        render(ctx){
-          ctx.strokeStyle = "#9999CC";
-          ctx.fillStyle = "rgba(100, 100, 200, 0.5)";
-          ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
-          ctx.strokeRect(-this.width/2, -this.height/2, this.width, this.height);
-          super.render(ctx);
-        }
-      }
-
-      class Player extends Entity {
-        constructor(x, y){
-          super(x, y, 32, 32);
-          this.add_physics_body();
+      class Board extends Entity {
+        constructor(){
+          super(0, 0, (BLOCKSIZE*WIDTH), (BLOCKSIZE*WIDTH));
+          this.tiles = [];
+          for(var i = 0; i < WIDTH; i++){
+            this.tiles.push([]);
+            for(var j = 0; j < WIDTH; j++){
+              this.tiles[i].push(new Tile(BLOCKSIZE/2+i*BLOCKSIZE, BLOCKSIZE/2+j*BLOCKSIZE));
+            }
+          }
+          this.tiles[0][0].selected = true;
+          this.selected_color = this.tiles[0][0].color;
+          this.update_tiles();
         }
         update(dt){
           super.update(dt);
-          let x_offset = 0;
-          let y_offset = 0;
-          if(this.up) y_offset -= dt*500;
-          if(this.down) y_offset += dt*500;
-          if(this.left) x_offset -= dt*500;
-          if(this.right) x_offset += dt*500;
-          Matter.Body.setPosition(this.physics_body, {x: this.x+x_offset, y: this.y+y_offset});
+          this.tiles.forEach((row) => {
+            row.forEach((tile) => {
+              tile.update(dt);
+            });
+          });
         }
         render(ctx){
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
           super.render(ctx);
+          this.tiles.forEach((row) => {
+            row.forEach((tile) => {
+              ctx.save();
+              ctx.translate(-this.width/2+tile.x, -this.height/2+tile.y);
+              tile.render(ctx);
+              ctx.restore();
+            });
+          });
+        }
+        click(x, y, pressed){
+          if(!pressed) return;
+          game.scene.board_click();
+          const hb = BLOCKSIZE/2;
+          this.tiles.forEach((row) => {
+            row.forEach((tile) => {
+              let offset_x = this.x - this.width/2 + tile.x;
+              let offset_y = this.y - this.height/2 + tile.y;
+              if(x < offset_x - hb) return;
+              if(x > offset_x + hb) return;
+              if(y < offset_y - hb) return;
+              if(y > offset_y + hb) return;
+              tile.click(offset_x - x, offset_y - y);
+              if(tile.color != this.selected_color){
+                this.selected_color = tile.color;
+                game.scene.tile_click();
+              }
+            });
+          });
+          this.update_tiles();
+        }
+        update_tiles(){
+          let unselected = 0;
+          this.tiles.forEach((row, row_index) => {
+            row.forEach((tile, col_index) => {
+              if(tile.selected){
+                tile.color = this.selected_color;
+                console.log(row_index + " " + col_index);
+                if(row_index > 0)
+                  if(this.tiles[row_index-1][col_index].color == tile.color) this.tiles[row_index-1][col_index].select();
+                if(row_index < WIDTH-1)
+                  if(this.tiles[row_index+1][col_index].color == tile.color) this.tiles[row_index+1][col_index].select();
+                if(col_index > 0)
+                  if(this.tiles[row_index][col_index-1].color == tile.color) this.tiles[row_index][col_index-1].select();
+                if(col_index < WIDTH-1)
+                  if(this.tiles[row_index][col_index+1].color == tile.color) this.tiles[row_index][col_index+1].select();
+              } else {
+                unselected += 1;
+              }
+            });
+          });
+          if(unselected == 0) game.scene.win();
         }
       }
+
+      class Tile extends Entity {
+        constructor(x, y){
+          super(x, y, BLOCKSIZE-2, BLOCKSIZE-2);
+          this.color = Math.floor(Math.random() * colors.length);
+          this.rise_length = 0.5;
+          this.pressed_ago = this.rise_length;
+        }
+        update(dt){
+          if(this.pressed_ago < this.rise_length) this.pressed_ago += dt;
+        }
+        render(ctx){
+          let drop = (this.rise_length-this.pressed_ago)*10;
+          ctx.fillStyle = colors[this.color];
+          ctx.fillRect(-this.width/2, -this.height/2+drop, this.width, this.height+drop);
+          super.render(ctx);
+        }
+        select(){
+          this.pressed_ago = 0;
+          this.selected = true;
+        }
+        click(x, y, pressed){
+          this.pressed_ago = 0;
+        }
+      }
+
       game.set_scene({
-        world: new World(1920*3, 1080*3),
+        world: new World(1280, 720),
         setup: function(){
-          this.player = new Player(0, 0);
-          this.add(this.player);
-          this.add(new Floor(0, 0, 1024, 1024), 99);
-          this.add(new Floor(-512, 1024, 1024, 1024), 99);
-
-          this.add(new Light(-256, 256, 128, 128), 150);
-          this.add(new Light(256, -256, 128, 128), 150);
-          this.add(new Light(256, 256, 128, 128), 150);
-          this.add(new Light(-256, -256, 128, 128), 150);
-          this.add(new Light(-512, 1024, 128, 128), 150);
-
-          this.add(new Wall(-512, 0, 64, 1024));
-          this.add(new Wall(512, 0, 64, 1024));
-          this.add(new Wall(256, 512, 512, 64));
-          this.add(new Wall(0, -512, 1024, 64));
-          this.add(new Wall(0, 1024, 64, 1024));
-          this.add(new Wall(-512-256, 512, 512, 64));
-          this.add(new Wall(-1024, 1024, 64, 1024));
-          this.add(new Wall(-512, 1024+512, 1024, 64));
-
-          this.add(new Wall(128, 128, 64, 64));
-          this.add(new Wall(128, 256, 64, 64));
-          this.add(new Wall(256, 256, 64, 64));
-          this.add(new Wall(256, 128, 64, 64));
-
-          this.add(new Wall(128-1024, 256+128+512, 128, 128));
-          this.add(new Wall(128-1024, 256+256+512+32, 128, 128));
-          this.add(new Wall(256-1024+32, 256+256+512+32, 128, 128));
-          this.add(new Wall(256-1024+32, 256+128+512, 128, 128));
-          this.add(new Wall(512-1024, 256+256+512+32, 256, 128));
-          this.add(new Wall(512-1024, 256+128+512, 256, 128));
-
-          this.add(new Light(-16, 1024, 16, 16), 115);
-          this.add(new Light(-24, 1024+8, 16, 16), 115);
-          this.add(new Light(-32, 1024-10, 16, 16), 115);
-          this.add(new Light(-64, 1024+32, 16, 16), 115);
-          this.add(new Light(-76, 1024+16, 16, 16), 115);
-          this.game.engine.viewport.track(this.player);
+          this.reset();
         },
-        handle_key(event, pressed){
-          if(event.key == "w") this.player.up = pressed;
-          if(event.key == "s") this.player.down = pressed;
-          if(event.key == "a") this.player.left = pressed;
-          if(event.key == "d") this.player.right = pressed;
+        reset: function(){
+          this.clicks = 0;
+          this.max_clicks = 21;
+          this.game_over = false;
+          this.game_won = false;
+          this.world.reset();
+          this.board = new Board();
+          this.add(this.board);
         },
+        board_click(){
+          if(this.game_over || this.game_won) this.reset();
+        },
+        tile_click(){
+          this.board_click();
+          this.clicks += 1;
+          if(this.clicks >= this.max_clicks) this.fail();
+        },
+        fail(){
+          this.game_over = true;
+        },
+        win(){
+          this.game_won = true;
+        },
+        render(ctx){
+          ctx.save();
+          ctx.translate(100, 100);
+          ctx.font = "30px Arial";
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillText("Clicks " + this.clicks + "/" + this.max_clicks, 0, 0);
+          if(this.game_over){            
+            ctx.fillText("Game over", 0, 30);
+          }
+          if(this.game_won){            
+            ctx.fillText("Victory!!!", 0, 30);
+          }
+          ctx.restore();
+        }
       });
       game.run();
     </script>

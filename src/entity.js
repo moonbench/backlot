@@ -10,6 +10,7 @@ class Entity {
     this.dead = false;
     this.debug_level = 0;
     this.anchor = null;
+    this.normalize_if_dirty();
   }
 
   reset(){}
@@ -84,11 +85,18 @@ class Entity {
     return this;
   }
 
+  render_start(ctx){
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+  }
+
+  render_finish(ctx){
+    this.render_debug(ctx);
+    ctx.restore();
+  }
+
   render(ctx){
-    if(this.debug_level > 0){
-      ctx.rotate(0-this.angle);
-      this.render_debug(ctx);
-    }
     if(this.debug_level<1) return;
     this.render_box_outline(ctx);
   }
@@ -137,8 +145,11 @@ class Entity {
   }
 
   render_debug(ctx){
+    if(this.debug_level<1) return;
+
     ctx.strokeStyle = "#86f962";
     ctx.lineWidth = 1;
+    ctx.rotate(0-this.angle);
     this.render_crosshair(ctx);
     this.render_alignment_vector(ctx);
 

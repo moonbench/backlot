@@ -19,11 +19,13 @@ class World {
       layer.update(dt);
     });
   }
+
   render(ctx){
     this.layers.forEach(layer => {
       layer.render(ctx);
     });
   }
+
   find_or_create_world_layer(depth){
     let layer = this.layers.find(function(layer){ return layer.depth == depth });
     if(!layer){
@@ -33,15 +35,23 @@ class World {
     }
     return layer;
   }
+
   sort_layers(){
     this.layers.sort(function(layer1, layer2){
       return layer1.depth-layer2.depth;
     })
   }
+
   add(entity, depth=100){
     const layer = this.find_or_create_world_layer(depth);
     if(entity.physics_body && !layer.physics)
       layer.enable_physics();
     layer.add(entity);
+  }
+
+  click(event, pressed, cursor){
+    this.layers.forEach((layer) => {
+      layer.click(cursor.x, cursor.y, pressed);
+    });
   }
 }

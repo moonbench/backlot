@@ -6,7 +6,7 @@ class Layer {
     this.world = world;
     this.entities = [];
     this.pending_addition = [];
-    this.debug_level = 1;
+    this.debug_level = 0;
   }
 
   update(dt){
@@ -62,11 +62,9 @@ class Layer {
          entity_offset[1] + entity.min.y*scale > viewport.height+viewport.top_offset)
         return;
 
-      ctx.save();
-      ctx.translate(entity.x, entity.y);
-      ctx.rotate(entity.angle);
+      entity.render_start(ctx);
       entity.render(ctx);
-      ctx.restore();
+      entity.render_finish(ctx);
     });
     ctx.restore();
   }
@@ -81,5 +79,18 @@ class Layer {
     this.physics = true;
     this.physics_engine = Matter.Engine.create();
     this.physics_engine.world.gravity.scale = 0;
+  }
+
+  click(viewport_x, viewport_y, pressed){    
+    const [x,y] = this.world.engine.viewport.viewport_to_world(viewport_x, viewport_y, this.depth);
+    this.entities.filter((entity) => {if(entity.click) return true}).forEach((entity) => {
+      let offset_x = entity.x + x;
+      let offset_y = entity.y + y;
+      if(offset_x < entity.min.x) return;
+      if(offset_x > entity.max.x) return;
+      if(offset_y < entity.min.y) return;
+      if(offset_y > entity.max.y) return;
+      entity.click(offset_x, offset_y, pressed);
+    });
   }
 }
